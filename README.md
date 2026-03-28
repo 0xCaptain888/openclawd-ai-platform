@@ -1,5 +1,9 @@
 # OpenClawd AI 统一平台
 
+> **在线文档**：[https://0xcaptain888.github.io/openclawd-ai-platform/](https://0xcaptain888.github.io/openclawd-ai-platform/)
+>
+> 包含 [部署与运维指南](https://0xcaptain888.github.io/openclawd-ai-platform/deployment-guide.html) 和 [API 使用手册](https://0xcaptain888.github.io/openclawd-ai-platform/api-manual.html)
+
 一站式 AI 服务平台，通过统一的 API 网关管理三大业务服务 —— **社交媒体机器人**、**智能网站**、**交易助手** —— 共享同一个本地 LLM 后端（vLLM / Ollama / LocalAI），无需任何外部 API 依赖。
 
 ---
@@ -932,7 +936,10 @@ docker compose logs social-bot | grep "提示词"
 
 | 文档 | 说明 |
 |------|------|
-| [README_DEPLOY.md](./README_DEPLOY.md) | 详细部署指南，含架构图、端点列表、运维命令、故障排查 |
+| [在线文档中心](https://0xcaptain888.github.io/openclawd-ai-platform/) | GitHub Pages 托管的永久在线文档入口 |
+| [部署与运维指南（在线）](https://0xcaptain888.github.io/openclawd-ai-platform/deployment-guide.html) | 12 模块完全教程：硬件选型、驱动安装、Docker、监控、集群管理、故障处理 |
+| [API 使用手册（在线）](https://0xcaptain888.github.io/openclawd-ai-platform/api-manual.html) | 全部 API 端点的详细参数、响应格式和 curl 示例 |
+| [README_DEPLOY.md](./README_DEPLOY.md) | 快速部署指南，含架构图、端点列表、运维命令、故障排查 |
 | [social-bot/prompts/README_PROMPTS.md](./social-bot/prompts/README_PROMPTS.md) | 提示词工程指南，如何优化和自定义平台提示词 |
 | [.env.example](./.env.example) | 完整的环境变量配置模板及说明 |
 

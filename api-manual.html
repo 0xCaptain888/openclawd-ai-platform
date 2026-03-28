@@ -1,0 +1,2144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 平台 API 使用手册</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+<!-- STYLES_PLACEHOLDER -->
+<style>
+:root {
+  --bg-deep: #0a0e1a;
+  --bg-mid: #0f1628;
+  --bg-card: #141c30;
+  --neon-green: #00ff88;
+  --neon-pink: #ff2d78;
+  --neon-blue: #00b4ff;
+  --neon-purple: #a855f7;
+  --neon-orange: #ff8c00;
+  --text-primary: #e2e8f0;
+  --text-muted: #64748b;
+  --text-dim: #334155;
+  --glow-green: 0 0 20px rgba(0,255,136,0.3), 0 0 40px rgba(0,255,136,0.1);
+  --glow-pink: 0 0 20px rgba(255,45,120,0.3), 0 0 40px rgba(255,45,120,0.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Noto Sans SC', sans-serif;
+  overflow-x: hidden;
+  line-height: 1.8;
+}
+::selection { background: var(--neon-green); color: var(--bg-deep); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--neon-green); border-radius: 3px; }
+
+#progress-bar {
+  position: fixed; top:0; left:0; width:100%; height:3px; z-index:9999;
+  background: linear-gradient(90deg, var(--neon-green), var(--neon-blue), var(--neon-pink));
+  transform-origin: left; transform: scaleX(0);
+  box-shadow: var(--glow-green);
+}
+.noise-overlay {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  pointer-events: none; z-index: 9998; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+.font-serif { font-family: 'Noto Serif SC', serif; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+.glow-green { text-shadow: var(--glow-green); }
+.glow-pink { text-shadow: var(--glow-pink); }
+
+.hero-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(0,255,136,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(255,45,120,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 20% 80%, rgba(0,180,255,0.05) 0%, transparent 50%),
+    var(--bg-deep);
+}
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.terminal {
+  background: #0d1117; border: 1px solid #21262d;
+  border-radius: 8px; overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; line-height: 1.6;
+}
+.terminal-header {
+  background: #161b22; padding: 8px 16px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid #21262d;
+}
+.terminal-dot { width:12px; height:12px; border-radius:50%; }
+.terminal-title { color: var(--text-muted); font-size: 12px; margin-left: 8px; }
+.terminal-body { padding: 16px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+.terminal .cmd { color: var(--neon-green); }
+.terminal .comment { color: #6e7681; }
+.terminal .output { color: #8b949e; }
+.terminal .highlight { color: var(--neon-pink); }
+.terminal .string { color: #a5d6ff; }
+.terminal .flag { color: var(--neon-orange); }
+.terminal .key { color: var(--neon-pink); }
+.terminal .val { color: var(--neon-green); }
+.terminal .num { color: var(--neon-orange); }
+
+.section-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(20,28,48,0.8) 100%);
+  border: 1px solid rgba(0,255,136,0.1);
+  border-radius: 12px; padding: 2rem;
+  position: relative; overflow: hidden;
+}
+.section-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
+}
+
+.module-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 16px;
+  background: rgba(0,255,136,0.1);
+  border: 1px solid rgba(0,255,136,0.3);
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--neon-green);
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.module-badge.pink {
+  background: rgba(255,45,120,0.1);
+  border-color: rgba(255,45,120,0.3);
+  color: var(--neon-pink);
+}
+.module-badge.blue {
+  background: rgba(0,180,255,0.1);
+  border-color: rgba(0,180,255,0.3);
+  color: var(--neon-blue);
+}
+.module-badge.purple {
+  background: rgba(168,85,247,0.1);
+  border-color: rgba(168,85,247,0.3);
+  color: var(--neon-purple);
+}
+.module-badge.orange {
+  background: rgba(255,140,0,0.1);
+  border-color: rgba(255,140,0,0.3);
+  color: var(--neon-orange);
+}
+
+.method-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  font-weight: 700; letter-spacing: 1px;
+}
+.method-badge.post { background: rgba(0,255,136,0.15); color: var(--neon-green); border: 1px solid rgba(0,255,136,0.3); }
+.method-badge.get { background: rgba(0,180,255,0.15); color: var(--neon-blue); border: 1px solid rgba(0,180,255,0.3); }
+
+.tip-box {
+  border-radius: 8px; padding: 16px 20px;
+  display: flex; gap: 12px; align-items: flex-start;
+  font-size: 14px;
+}
+.tip-box.green { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); }
+.tip-box.pink { background: rgba(255,45,120,0.08); border: 1px solid rgba(255,45,120,0.2); }
+.tip-box.blue { background: rgba(0,180,255,0.08); border: 1px solid rgba(0,180,255,0.2); }
+.tip-box.orange { background: rgba(255,140,0,0.08); border: 1px solid rgba(255,140,0,0.2); }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th {
+  background: rgba(0,255,136,0.1); color: var(--neon-green);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 12px 16px; text-align: left;
+  border-bottom: 1px solid rgba(0,255,136,0.2);
+}
+.data-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.data-table tr:hover td { background: rgba(0,255,136,0.03); }
+
+.step-num {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+  color: var(--bg-deep);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 14px;
+  border-radius: 50%; flex-shrink: 0;
+}
+
+.anim-in { opacity: 0; transform: translateY(30px); }
+
+/* Floating TOC sidebar */
+.toc-sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 280px;
+  background: var(--bg-mid); border-right: 1px solid rgba(0,255,136,0.1);
+  z-index: 1000; padding: 80px 0 20px 0; overflow-y: auto;
+  transform: translateX(0); transition: transform 0.3s ease;
+}
+.toc-sidebar.hidden { transform: translateX(-100%); }
+.toc-item {
+  padding: 10px 20px; border-left: 2px solid var(--text-dim);
+  transition: all 0.3s ease; cursor: pointer;
+  display: block; color: var(--text-muted); text-decoration: none;
+  font-size: 13px;
+}
+.toc-item:hover, .toc-item.active {
+  border-left-color: var(--neon-green); background: rgba(0,255,136,0.05);
+  color: var(--neon-green); padding-left: 28px;
+}
+.toc-item.sub { padding-left: 36px; font-size: 12px; }
+.toc-item.sub:hover, .toc-item.sub.active { padding-left: 44px; }
+.toc-toggle {
+  position: fixed; left: 16px; top: 16px; z-index: 1001;
+  width: 40px; height: 40px; border-radius: 8px;
+  background: var(--bg-card); border: 1px solid rgba(0,255,136,0.3);
+  color: var(--neon-green); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; transition: all 0.3s;
+}
+.toc-toggle:hover { box-shadow: var(--glow-green); }
+
+.main-content { margin-left: 280px; transition: margin-left 0.3s ease; }
+.main-content.full { margin-left: 0; }
+
+.endpoint-card {
+  background: rgba(13,17,23,0.6); border: 1px solid #21262d;
+  border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;
+}
+.endpoint-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.endpoint-path {
+  font-family: 'JetBrains Mono', monospace; font-size: 15px;
+  color: var(--text-primary);
+}
+
+/* Copy button */
+.copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2);
+  color: var(--neon-green); border-radius: 4px; padding: 4px 8px;
+  font-size: 11px; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+  opacity: 0; transition: opacity 0.2s;
+}
+.terminal:hover .copy-btn { opacity: 1; }
+.copy-btn:hover { background: rgba(0,255,136,0.2); }
+
+/* Architecture diagram */
+.arch-box {
+  background: var(--bg-card); border: 1px solid rgba(0,255,136,0.2);
+  border-radius: 8px; padding: 16px; text-align: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  transition: all 0.3s;
+}
+.arch-box:hover { border-color: var(--neon-green); box-shadow: var(--glow-green); }
+.arch-arrow { color: var(--neon-green); font-size: 24px; }
+
+/* Config block */
+.config-block {
+  background: #0d1117; border: 1px solid #21262d;
+  border-left: 3px solid var(--neon-blue);
+  border-radius: 0 8px 8px 0; padding: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; line-height: 1.6;
+  overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+}
+.config-block .key { color: var(--neon-pink); }
+.config-block .val { color: var(--neon-green); }
+.config-block .comment { color: #6e7681; }
+
+@media (max-width: 1024px) {
+  .toc-sidebar { transform: translateX(-100%); }
+  .toc-sidebar.mobile-show { transform: translateX(0); }
+  .main-content { margin-left: 0 !important; }
+}
+
+/* FAQ accordion */
+.faq-item { border: 1px solid rgba(0,255,136,0.1); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.faq-q {
+  padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  background: rgba(0,255,136,0.03); transition: background 0.3s;
+}
+.faq-q:hover { background: rgba(0,255,136,0.08); }
+.faq-a { padding: 0 20px; max-height: 0; overflow: hidden; transition: all 0.4s ease; }
+.faq-a.open { max-height: 600px; padding: 16px 20px; }
+.faq-arrow { transition: transform 0.3s; color: var(--neon-green); }
+.faq-arrow.open { transform: rotate(180deg); }
+</style>
+</head>
+<body>
+<!-- BODY_PLACEHOLDER: progress bar, noise, toc, hero, sections, scripts -->
+<div id="progress-bar"></div>
+<div class="noise-overlay"></div>
+
+<!-- TOC Toggle -->
+<button class="toc-toggle" onclick="toggleToc()" id="tocToggle">&#9776;</button>
+
+<!-- TOC Sidebar -->
+<nav class="toc-sidebar" id="tocSidebar">
+  <div style="padding: 0 20px 16px; border-bottom: 1px solid rgba(0,255,136,0.1); margin-bottom: 12px;">
+    <div class="font-mono text-xs" style="color: var(--neon-green); letter-spacing: 2px;">API MANUAL</div>
+    <div class="font-serif text-lg mt-1">AI 平台使用手册</div>
+  </div>
+  <a href="#quick-start" class="toc-item">01 / 快速开始</a>
+  <a href="#architecture" class="toc-item sub">架构总览</a>
+  <a href="#social-api" class="toc-item">02 / 社媒运营机器人 API</a>
+  <a href="#social-generate" class="toc-item sub">内容生成</a>
+  <a href="#social-rewrite" class="toc-item sub">内容改写</a>
+  <a href="#social-video" class="toc-item sub">视频脚本</a>
+  <a href="#social-batch" class="toc-item sub">批量生成</a>
+  <a href="#social-platforms" class="toc-item sub">平台列表</a>
+  <a href="#website-api" class="toc-item">03 / 独立站 API</a>
+  <a href="#website-chat" class="toc-item sub">AI 客服</a>
+  <a href="#website-seo" class="toc-item sub">SEO 文章</a>
+  <a href="#website-meta" class="toc-item sub">Meta 标签</a>
+  <a href="#website-product" class="toc-item sub">产品描述</a>
+  <a href="#website-faq" class="toc-item sub">FAQ 生成</a>
+  <a href="#website-translate" class="toc-item sub">翻译</a>
+  <a href="#trading-api" class="toc-item">04 / 操盘辅助 API</a>
+  <a href="#trading-analyze" class="toc-item sub">市场分析</a>
+  <a href="#trading-indicators" class="toc-item sub">技术指标</a>
+  <a href="#trading-signal" class="toc-item sub">交易信号</a>
+  <a href="#trading-backtest" class="toc-item sub">策略回测</a>
+  <a href="#trading-report" class="toc-item sub">AI 报告</a>
+  <a href="#gateway" class="toc-item">05 / API 网关</a>
+  <a href="#config" class="toc-item">06 / 配置参考</a>
+  <a href="#faq" class="toc-item">07 / 常见问题</a>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+
+<!-- HERO_PLACEHOLDER -->
+<section class="hero-bg grid-bg relative" style="min-height: 60vh; display: flex; align-items: center; justify-content: center;">
+<div class="text-center px-4" style="max-width: 800px;">
+  <div class="module-badge mb-6" id="heroAnim1">DOCUMENTATION v2.0</div>
+  <h1 class="font-serif text-5xl md:text-6xl font-bold mb-4" id="heroAnim2" style="background: linear-gradient(135deg, var(--neon-green), var(--neon-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+    AI 平台 API 使用手册
+  </h1>
+  <p class="text-lg" id="heroAnim3" style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+    社媒运营 &middot; 独立站智能化 &middot; 操盘辅助 &middot; API 网关<br>
+    <span class="font-mono text-sm" style="color: var(--neon-green);">全模块接口文档与实战示例</span>
+  </p>
+</div>
+</section>
+
+<!-- Section 1: 快速开始 -->
+<section id="quick-start" class="px-4 py-20" style="max-width: 1000px; margin: 0 auto;">
+  <div class="anim-in">
+    <div class="module-badge mb-4">SECTION 01</div>
+    <h2 class="font-serif text-3xl font-bold mb-2" style="color: var(--neon-green);">快速开始</h2>
+    <p style="color: var(--text-muted);" class="mb-8">三步完成部署，立即开始使用 AI 平台全部功能</p>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="anim-in flex gap-4 mb-6">
+    <div class="step-num">1</div>
+    <div class="flex-1">
+      <h3 class="font-bold text-lg mb-2">复制环境配置文件</h3>
+      <div class="terminal relative">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">bash</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <div class="terminal-body"><span class="cmd">cp</span> .env.example .env</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="anim-in flex gap-4 mb-6">
+    <div class="step-num">2</div>
+    <div class="flex-1">
+      <h3 class="font-bold text-lg mb-2">编辑 LLM 接口地址和密钥</h3>
+      <div class="terminal relative">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">.env</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <div class="terminal-body"><span class="comment"># 大语言模型接口（兼容 OpenAI 格式）</span>
+<span class="key">LLM_API_URL</span>=<span class="val">http://your-llm-server:8080/v1</span>
+<span class="key">LLM_API_KEY</span>=<span class="val">sk-your-api-key-here</span>
+<span class="key">LLM_MODEL</span>=<span class="val">gpt-4o</span>
+
+<span class="comment"># API 网关密钥（客户端使用此 token 访问）</span>
+<span class="key">GATEWAY_API_KEY</span>=<span class="val">your-gateway-secret-token</span>
+
+<span class="comment"># 服务端口</span>
+<span class="key">GATEWAY_PORT</span>=<span class="val">80</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="anim-in flex gap-4 mb-8">
+    <div class="step-num">3</div>
+    <div class="flex-1">
+      <h3 class="font-bold text-lg mb-2">一键启动所有服务</h3>
+      <div class="terminal relative">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">bash</span>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <div class="terminal-body"><span class="cmd">docker compose up -d</span>
+
+<span class="output">[+] Running 5/5
+ ✓ Network ai-platform_default    Created
+ ✓ Container ai-gateway           Started
+ ✓ Container ai-social-bot        Started
+ ✓ Container ai-website           Started
+ ✓ Container ai-trading           Started</span>
+
+<span class="comment"># 验证所有服务运行正常</span>
+<span class="cmd">curl</span> <span class="string">http://localhost:80/health</span>
+<span class="output">{"status":"ok","services":{"social":"healthy","website":"healthy","trading":"healthy"}}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip-box green anim-in mb-12">
+    <span style="font-size:20px;">&#9889;</span>
+    <div><strong>提示：</strong>所有 API 请求统一通过网关（端口 80）访问，无需直接连接各服务端口。请求头需携带 <span class="font-mono" style="color:var(--neon-green);">Authorization: Bearer &lt;GATEWAY_API_KEY&gt;</span></div>
+  </div>
+
+  <!-- Architecture Diagram -->
+  <div id="architecture" class="anim-in">
+    <h3 class="font-serif text-2xl font-bold mb-6" style="color: var(--neon-blue);">架构总览</h3>
+    <div class="section-card">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center text-center">
+        <!-- Client -->
+        <div class="arch-box" style="border-color: rgba(168,85,247,0.4);">
+          <div style="color: var(--neon-purple); font-size: 28px; margin-bottom: 4px;">&#128187;</div>
+          <div class="font-bold">客户端</div>
+          <div style="color: var(--text-muted); font-size: 11px;">Web / App / curl</div>
+        </div>
+        <div class="arch-arrow text-center">&#10132;</div>
+        <!-- Gateway -->
+        <div class="arch-box" style="border-color: rgba(0,255,136,0.4); grid-column: span 1;">
+          <div style="color: var(--neon-green); font-size: 28px; margin-bottom: 4px;">&#128737;</div>
+          <div class="font-bold" style="color: var(--neon-green);">API 网关</div>
+          <div style="color: var(--text-muted); font-size: 11px;">:80 鉴权 / 限流 / 路由</div>
+        </div>
+        <div class="arch-arrow text-center">&#10132;</div>
+        <!-- Services -->
+        <div class="space-y-3">
+          <div class="arch-box" style="border-color: rgba(255,45,120,0.3); padding: 10px;">
+            <div style="color: var(--neon-pink); font-size: 12px;" class="font-mono">social-bot :3001</div>
+          </div>
+          <div class="arch-box" style="border-color: rgba(0,180,255,0.3); padding: 10px;">
+            <div style="color: var(--neon-blue); font-size: 12px;" class="font-mono">website :3002</div>
+          </div>
+          <div class="arch-box" style="border-color: rgba(255,140,0,0.3); padding: 10px;">
+            <div style="color: var(--neon-orange); font-size: 12px;" class="font-mono">trading :3003</div>
+          </div>
+        </div>
+      </div>
+      <!-- LLM connection -->
+      <div class="mt-6 text-center">
+        <div class="arch-arrow">&#11015;</div>
+        <div class="arch-box mt-3 inline-block" style="border-color: rgba(168,85,247,0.4); padding: 12px 32px;">
+          <div style="color: var(--neon-purple); font-size: 28px; margin-bottom: 4px;">&#129302;</div>
+          <div class="font-bold" style="color: var(--neon-purple);">LLM 服务</div>
+          <div style="color: var(--text-muted); font-size: 11px;">OpenAI / DeepSeek / 本地模型</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: 社媒运营机器人 API -->
+<section id="social-api" class="px-4 py-20" style="max-width: 1000px; margin: 0 auto;">
+  <div class="anim-in">
+    <div class="module-badge pink mb-4">SECTION 02</div>
+    <h2 class="font-serif text-3xl font-bold mb-2" style="color: var(--neon-pink);">社媒运营机器人 API</h2>
+    <p style="color: var(--text-muted);" class="mb-10">一套接口覆盖小红书、抖音、微博、微信公众号、B站等主流平台的内容生成与改写</p>
+  </div>
+
+  <!-- POST /social/generate -->
+  <div id="social-generate" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/social/generate</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">根据指定平台、话题和风格，生成一篇符合平台调性的原创内容。支持小红书、抖音、微博、公众号、B站等平台。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/social/generate</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "platform": "xiaohongshu",
+  "topic": "夏日防晒好物推荐",
+  "style": "种草",
+  "tone": "活泼可爱",
+  "keywords": ["防晒霜", "SPF50", "清爽不油腻"],
+  "word_count": 500
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"platform"</span>: <span class="string">"xiaohongshu"</span>,
+    <span class="key">"title"</span>: <span class="string">"姐妹们！这5款防晒霜让我整个夏天白了两个度 ☀️"</span>,
+    <span class="key">"content"</span>: <span class="string">"夏天来啦！作为一个被紫外线伤害过的过来人，今天必须给姐妹们安利这几款我回购了无数次的防晒好物！\n\n🌟 第一款：安耐晒金瓶\nSPF50+ PA++++，户外暴晒扛得住！质地轻薄，上脸完全不油腻，摇一摇就能用，懒人福音～\n\n🌟 第二款：薇诺娜清透防晒\n敏感肌亲妈！成分超温和，清爽不闷痘，日常通勤我天天用它，一瓶能用两个月，性价比绝了！\n\n🌟 第三款：科颜氏柔润防晒\n这款质地像乳液一样水润，干皮姐妹闭眼入！自带提亮效果，涂完素颜出门也不怕～\n\n💡 防晒小tips：\n1. 出门前20分钟涂！\n2. 用量要够！一张脸至少一元硬币大小\n3. 每隔2小时记得补涂哦\n\n这个夏天一起白成一道光吧！✨\n\n#夏日防晒 #防晒霜推荐 #好物分享 #护肤心得"</span>,
+    <span class="key">"hashtags"</span>: [<span class="string">"夏日防晒"</span>, <span class="string">"防晒霜推荐"</span>, <span class="string">"好物分享"</span>, <span class="string">"护肤心得"</span>],
+    <span class="key">"word_count"</span>: <span class="num">487</span>,
+    <span class="key">"estimated_read_time"</span>: <span class="string">"2分钟"</span>
+  },
+  <span class="key">"usage"</span>: { <span class="key">"prompt_tokens"</span>: <span class="num">256</span>, <span class="key">"completion_tokens"</span>: <span class="num">512</span> }
+}</span></div>
+    </div>
+
+    <div class="tip-box blue">
+      <span style="font-size:18px;">&#128161;</span>
+      <div><strong>使用场景：</strong>运营人员输入话题和关键词，即可快速生成符合小红书调性的种草文案，包含标题、正文、标签，可直接复制发布。</div>
+    </div>
+  </div>
+
+  <!-- POST /social/rewrite -->
+  <div id="social-rewrite" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/social/rewrite</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">将已有内容（如竞品文案）改写为全新原创内容，保留核心卖点但完全重写表达方式，规避抄袭风险。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/social/rewrite</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "platform": "xiaohongshu",
+  "original_content": "这款面膜真的太好用了，敷完脸蛋水嫩嫩的，美白效果肉眼可见，每周敷三次，一个月白了好几度，姐妹们快冲！",
+  "rewrite_style": "专业测评",
+  "preserve_keywords": ["美白", "面膜", "水嫩"],
+  "originality_level": "high"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"rewritten_content"</span>: <span class="string">"【28天实测报告】这款烟酰胺美白面膜到底值不值得入？\n\n作为一个成分党，我花了整整一个月时间做了详细测评。每周使用频率3次，配合皮肤检测仪记录数据。\n\n📊 使用感受：\n- 精华液含量充足，展开后面膜纸贴合度高\n- 上脸无刺激感，敏感肌测试通过\n- 敷后即时效果：肌肤含水量提升约23%，触感水嫩细腻\n\n📈 28天数据对比：\n- 肤色均匀度改善明显\n- 暗沉区域提亮效果可量化\n- 整体肌肤透亮感提升\n\n⚠️ 客观评价：美白是一个长期过程，建议搭配防晒使用效果更佳。\n\n#面膜测评 #美白护肤 #成分党"</span>,
+    <span class="key">"originality_score"</span>: <span class="num">0.94</span>,
+    <span class="key">"preserved_keywords_used"</span>: [<span class="string">"美白"</span>, <span class="string">"面膜"</span>, <span class="string">"水嫩"</span>]
+  }
+}</span></div>
+    </div>
+
+    <div class="tip-box orange">
+      <span style="font-size:18px;">&#128270;</span>
+      <div><strong>使用场景：</strong>分析竞品爆款文案后，输入原文并选择改写风格，系统会生成全新表达的原创内容，保留卖点但规避查重。<code>originality_level</code> 支持 <code>low</code>、<code>medium</code>、<code>high</code> 三个级别。</div>
+    </div>
+  </div>
+
+  <!-- POST /social/video-script -->
+  <div id="social-video" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/social/video-script</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">生成结构化的短视频脚本，包含分镜描述、台词、时间轴，适用于抖音/快手/B站等视频平台。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/social/video-script</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "platform": "douyin",
+  "topic": "新款降噪耳机开箱测评",
+  "video_type": "product_review",
+  "duration_seconds": 60,
+  "style": "专业数码博主",
+  "product_name": "SoundMax Pro 降噪耳机"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"title"</span>: <span class="string">"399块的降噪耳机能打吗？SoundMax Pro 真实体验"</span>,
+    <span class="key">"hook"</span>: <span class="string">"三百多块钱的降噪耳机，降噪效果居然能打千元级？"</span>,
+    <span class="key">"total_duration"</span>: <span class="num">60</span>,
+    <span class="key">"scenes"</span>: [
+      {
+        <span class="key">"scene_id"</span>: <span class="num">1</span>,
+        <span class="key">"time"</span>: <span class="string">"00:00-00:05"</span>,
+        <span class="key">"shot"</span>: <span class="string">"近景：手持耳机盒，缓慢打开"</span>,
+        <span class="key">"narration"</span>: <span class="string">"三百多块的降噪耳机，降噪效果居然能打千元级？"</span>,
+        <span class="key">"subtitle"</span>: <span class="string">"399元 vs 千元级降噪？"</span>,
+        <span class="key">"bgm_note"</span>: <span class="string">"悬念感电子音乐"</span>
+      },
+      {
+        <span class="key">"scene_id"</span>: <span class="num">2</span>,
+        <span class="key">"time"</span>: <span class="string">"00:05-00:15"</span>,
+        <span class="key">"shot"</span>: <span class="string">"特写：耳机外观 360 度展示"</span>,
+        <span class="key">"narration"</span>: <span class="string">"先看外观，磨砂质感的充电仓，耳机单只重量只有5.2g，佩戴几乎无感。"</span>,
+        <span class="key">"subtitle"</span>: <span class="string">"单只仅5.2g 佩戴无感"</span>,
+        <span class="key">"bgm_note"</span>: <span class="string">"轻快节奏"</span>
+      },
+      {
+        <span class="key">"scene_id"</span>: <span class="num">3</span>,
+        <span class="key">"time"</span>: <span class="string">"00:15-00:35"</span>,
+        <span class="key">"shot"</span>: <span class="string">"实景：地铁/咖啡厅降噪对比"</span>,
+        <span class="key">"narration"</span>: <span class="string">"来到实际场景测试。地铁上开启降噪，列车噪音直接消失大半。咖啡厅里人声嘈杂，开启降噪后瞬间安静。实测降噪深度达到35dB。"</span>,
+        <span class="key">"subtitle"</span>: <span class="string">"实测降噪深度 35dB"</span>,
+        <span class="key">"bgm_note"</span>: <span class="string">"降噪前后对比音效"</span>
+      },
+      {
+        <span class="key">"scene_id"</span>: <span class="num">4</span>,
+        <span class="key">"time"</span>: <span class="string">"00:35-00:50"</span>,
+        <span class="key">"shot"</span>: <span class="string">"中景：博主佩戴耳机听音乐"</span>,
+        <span class="key">"narration"</span>: <span class="string">"音质方面，12mm大动圈单元，低频下潜有力，人声清晰通透。蓝牙5.3连接稳定，延迟低到可以拿来打游戏。"</span>,
+        <span class="key">"subtitle"</span>: <span class="string">"12mm动圈 蓝牙5.3"</span>,
+        <span class="key">"bgm_note"</span>: <span class="string">"音乐片段展示"</span>
+      },
+      {
+        <span class="key">"scene_id"</span>: <span class="num">5</span>,
+        <span class="key">"time"</span>: <span class="string">"00:50-01:00"</span>,
+        <span class="key">"shot"</span>: <span class="string">"正面中景：博主总结推荐"</span>,
+        <span class="key">"narration"</span>: <span class="string">"总结：399的价位，给到35dB降噪、8小时续航、IP54防水，非常能打。想体验降噪但预算有限的朋友，可以闭眼入。"</span>,
+        <span class="key">"subtitle"</span>: <span class="string">"性价比之王 闭眼入"</span>,
+        <span class="key">"bgm_note"</span>: <span class="string">"总结感音乐渐弱"</span>
+      }
+    ],
+    <span class="key">"tags"</span>: [<span class="string">"耳机测评"</span>, <span class="string">"降噪耳机"</span>, <span class="string">"数码好物"</span>, <span class="string">"SoundMaxPro"</span>]
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /social/batch -->
+  <div id="social-batch" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/social/batch</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">一次请求同时为多个平台生成内容，每个平台自动适配文案风格、字数限制和标签格式。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/social/batch</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "topic": "新品咖啡机上市推广",
+  "platforms": ["xiaohongshu", "douyin", "weibo", "wechat", "bilibili"],
+  "brand": "BrewMaster",
+  "product_info": "全自动意式咖啡机，15Bar萃取压力，30秒出杯",
+  "tone": "年轻时尚"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"total_platforms"</span>: <span class="num">5</span>,
+    <span class="key">"results"</span>: [
+      {
+        <span class="key">"platform"</span>: <span class="string">"xiaohongshu"</span>,
+        <span class="key">"title"</span>: <span class="string">"咖啡星人狂喜！这台咖啡机30秒就能出一杯意式 ☕"</span>,
+        <span class="key">"content"</span>: <span class="string">"作为每天不喝咖啡会死星人，终于找到了在家就能喝到cafe品质的神器..."</span>,
+        <span class="key">"word_count"</span>: <span class="num">480</span>
+      },
+      {
+        <span class="key">"platform"</span>: <span class="string">"douyin"</span>,
+        <span class="key">"title"</span>: <span class="string">"30秒一杯意式浓缩！这咖啡机也太快了"</span>,
+        <span class="key">"content"</span>: <span class="string">"（开头画面：倒计时30秒）你敢信？从按下按钮到喝上第一口浓缩..."</span>,
+        <span class="key">"word_count"</span>: <span class="num">150</span>
+      },
+      {
+        <span class="key">"platform"</span>: <span class="string">"weibo"</span>,
+        <span class="key">"title"</span>: <span class="val">null</span>,
+        <span class="key">"content"</span>: <span class="string">"早起困成狗？BrewMaster 全自动咖啡机拯救你的每个早晨！15Bar意式萃取，30秒出杯，咖啡厅级别的口感在家轻松拥有。这个价格真的可以告别外卖咖啡了 #咖啡机推荐 #居家好物 #BrewMaster"</span>,
+        <span class="key">"word_count"</span>: <span class="num">120</span>
+      },
+      {
+        <span class="key">"platform"</span>: <span class="string">"wechat"</span>,
+        <span class="key">"title"</span>: <span class="string">"告别速溶时代：一台真正懂咖啡的全自动意式咖啡机"</span>,
+        <span class="key">"content"</span>: <span class="string">"对于咖啡爱好者来说，一台好的咖啡机不仅是工具，更是生活品质的象征..."</span>,
+        <span class="key">"word_count"</span>: <span class="num">1200</span>
+      },
+      {
+        <span class="key">"platform"</span>: <span class="string">"bilibili"</span>,
+        <span class="key">"title"</span>: <span class="string">"【深度测评】这台千元咖啡机能打吗？萃取压力实测"</span>,
+        <span class="key">"content"</span>: <span class="string">"各位观众老爷好！今天给大家带来 BrewMaster 全自动意式咖啡机的详细测评..."</span>,
+        <span class="key">"word_count"</span>: <span class="num">800</span>
+      }
+    ]
+  },
+  <span class="key">"usage"</span>: { <span class="key">"prompt_tokens"</span>: <span class="num">680</span>, <span class="key">"completion_tokens"</span>: <span class="num">2750</span> }
+}</span></div>
+    </div>
+
+    <div class="tip-box green">
+      <span style="font-size:18px;">&#9889;</span>
+      <div><strong>使用场景：</strong>新品上市或活动推广时，一次性生成全平台内容。系统自动适配各平台特点：小红书偏种草、抖音偏短视频脚本、微博偏短平快、公众号偏深度长文、B站偏测评。</div>
+    </div>
+  </div>
+
+  <!-- GET /social/platforms -->
+  <div id="social-platforms" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/social/platforms</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">获取当前系统支持的所有社媒平台及其配置信息。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X GET</span> <span class="string">http://localhost:80/social/platforms</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"platforms"</span>: [
+      { <span class="key">"id"</span>: <span class="string">"xiaohongshu"</span>, <span class="key">"name"</span>: <span class="string">"小红书"</span>, <span class="key">"max_words"</span>: <span class="num">1000</span>, <span class="key">"styles"</span>: [<span class="string">"种草"</span>, <span class="string">"教程"</span>, <span class="string">"测评"</span>, <span class="string">"日常"</span>] },
+      { <span class="key">"id"</span>: <span class="string">"douyin"</span>, <span class="key">"name"</span>: <span class="string">"抖音"</span>, <span class="key">"max_words"</span>: <span class="num">300</span>, <span class="key">"styles"</span>: [<span class="string">"口播"</span>, <span class="string">"剧情"</span>, <span class="string">"测评"</span>, <span class="string">"教程"</span>] },
+      { <span class="key">"id"</span>: <span class="string">"weibo"</span>, <span class="key">"name"</span>: <span class="string">"微博"</span>, <span class="key">"max_words"</span>: <span class="num">2000</span>, <span class="key">"styles"</span>: [<span class="string">"热点"</span>, <span class="string">"话题"</span>, <span class="string">"互动"</span>] },
+      { <span class="key">"id"</span>: <span class="string">"wechat"</span>, <span class="key">"name"</span>: <span class="string">"微信公众号"</span>, <span class="key">"max_words"</span>: <span class="num">5000</span>, <span class="key">"styles"</span>: [<span class="string">"深度"</span>, <span class="string">"科普"</span>, <span class="string">"故事"</span>] },
+      { <span class="key">"id"</span>: <span class="string">"bilibili"</span>, <span class="key">"name"</span>: <span class="string">"B站"</span>, <span class="key">"max_words"</span>: <span class="num">3000</span>, <span class="key">"styles"</span>: [<span class="string">"测评"</span>, <span class="string">"科普"</span>, <span class="string">"吐槽"</span>, <span class="string">"教程"</span>] }
+    ]
+  }
+}</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: 独立站 API -->
+<section id="website-api" class="px-4 py-20" style="max-width: 1000px; margin: 0 auto;">
+  <div class="anim-in">
+    <div class="module-badge blue mb-4">SECTION 03</div>
+    <h2 class="font-serif text-3xl font-bold mb-2" style="color: var(--neon-blue);">独立站 API</h2>
+    <p style="color: var(--text-muted);" class="mb-10">为电商独立站提供 AI 客服、SEO 文章生成、产品描述、FAQ 生成、多语言翻译等智能化能力</p>
+  </div>
+
+  <!-- POST /website/api/chat -->
+  <div id="website-chat" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/website/api/chat</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">AI 智能客服接口，支持多轮对话、知识库检索，自动回答客户关于产品、物流、退换货等常见问题。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/website/api/chat</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "session_id": "sess_a1b2c3d4",
+  "message": "你好，我买的蓝牙耳机充不进电怎么办？订单号是 ORD-20260315-0042",
+  "context": {
+    "user_name": "张先生",
+    "language": "zh-CN"
+  }
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"session_id"</span>: <span class="string">"sess_a1b2c3d4"</span>,
+    <span class="key">"reply"</span>: <span class="string">"张先生您好！很抱歉您遇到了充电问题。关于蓝牙耳机无法充电，您可以尝试以下步骤排查：\n\n1. **检查充电线和充电口**：确认充电线没有损坏，充电口是否有灰尘或异物，可以用干净的软毛刷轻轻清理。\n2. **更换充电头**：尝试使用其他 USB 充电头，确认不是充电头的问题。\n3. **长按重置**：将耳机放入充电仓，长按充电仓按钮 10 秒进行重置。\n4. **检查充电仓电量**：确保充电仓本身有电。\n\n如果以上方法都无法解决，我已查到您的订单 ORD-20260315-0042 仍在保修期内，可以为您安排免费换新。请问需要我帮您发起售后申请吗？"</span>,
+    <span class="key">"suggested_actions"</span>: [
+      { <span class="key">"type"</span>: <span class="string">"button"</span>, <span class="key">"label"</span>: <span class="string">"发起售后申请"</span>, <span class="key">"action"</span>: <span class="string">"create_rma"</span> },
+      { <span class="key">"type"</span>: <span class="string">"button"</span>, <span class="key">"label"</span>: <span class="string">"联系人工客服"</span>, <span class="key">"action"</span>: <span class="string">"transfer_human"</span> }
+    ],
+    <span class="key">"knowledge_sources"</span>: [<span class="string">"产品手册-蓝牙耳机-故障排查.pdf"</span>, <span class="string">"售后政策.md"</span>],
+    <span class="key">"confidence"</span>: <span class="num">0.92</span>
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /website/api/seo/generate -->
+  <div id="website-seo" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/website/api/seo/generate</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">根据主题和关键词生成 SEO 友好的长文章，自动优化标题、段落结构、关键词密度。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/website/api/seo/generate</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "topic": "2026年最佳家用投影仪选购指南",
+  "keywords": ["家用投影仪", "4K投影", "投影仪推荐", "客厅影院"],
+  "word_count": 2000,
+  "language": "zh-CN",
+  "include_toc": true,
+  "seo_level": "advanced"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"title"</span>: <span class="string">"2026年家用投影仪选购终极指南：从入门到旗舰全解析"</span>,
+    <span class="key">"meta_description"</span>: <span class="string">"全面解析2026年最值得购买的家用投影仪，覆盖4K投影、激光光源、客厅影院方案，帮你找到最适合的投影仪。"</span>,
+    <span class="key">"toc"</span>: [
+      <span class="string">"为什么越来越多家庭选择投影仪"</span>,
+      <span class="string">"选购投影仪的5个核心参数"</span>,
+      <span class="string">"2026年各价位推荐机型"</span>,
+      <span class="string">"客厅影院搭建方案"</span>,
+      <span class="string">"常见问题解答"</span>
+    ],
+    <span class="key">"content"</span>: <span class="string">"# 2026年家用投影仪选购终极指南\n\n随着显示技术飞速发展，家用投影仪已经从\"大玩具\"变成了真正能替代电视的客厅影院核心设备...\n\n## 为什么越来越多家庭选择投影仪\n\n根据行业数据，2025年中国家用投影仪市场规模突破500万台..."</span>,
+    <span class="key">"word_count"</span>: <span class="num">2150</span>,
+    <span class="key">"keyword_density"</span>: {
+      <span class="key">"家用投影仪"</span>: <span class="string">"2.3%"</span>,
+      <span class="key">"4K投影"</span>: <span class="string">"1.1%"</span>,
+      <span class="key">"投影仪推荐"</span>: <span class="string">"0.8%"</span>,
+      <span class="key">"客厅影院"</span>: <span class="string">"0.9%"</span>
+    },
+    <span class="key">"readability_score"</span>: <span class="num">85</span>
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /website/api/seo/meta -->
+  <div id="website-meta" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/website/api/seo/meta</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">为网页生成 SEO 优化的 Meta 标签，包括 title、description、keywords、Open Graph 标签。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/website/api/seo/meta</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "page_url": "https://shop.example.com/products/smart-watch-pro",
+  "page_content": "SmartWatch Pro 智能手表，搭载血氧监测、心率追踪、GPS定位，续航14天",
+  "target_keywords": ["智能手表", "血氧监测手表", "长续航手表"]
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"title"</span>: <span class="string">"SmartWatch Pro 智能手表 | 血氧监测+14天超长续航 - 官方商城"</span>,
+    <span class="key">"description"</span>: <span class="string">"SmartWatch Pro 旗舰智能手表，精准血氧监测、24小时心率追踪、内置GPS定位，超长14天续航。专业运动健康管理，从手腕开始。"</span>,
+    <span class="key">"keywords"</span>: <span class="string">"智能手表,血氧监测手表,长续航手表,SmartWatch Pro,心率追踪,GPS手表"</span>,
+    <span class="key">"og_tags"</span>: {
+      <span class="key">"og:title"</span>: <span class="string">"SmartWatch Pro - 专业血氧监测智能手表"</span>,
+      <span class="key">"og:description"</span>: <span class="string">"14天续航 | 血氧+心率监测 | 内置GPS | 专业运动健康管理"</span>,
+      <span class="key">"og:type"</span>: <span class="string">"product"</span>
+    },
+    <span class="key">"html_snippet"</span>: <span class="string">"&lt;title&gt;SmartWatch Pro 智能手表 | 血氧监测+14天超长续航&lt;/title&gt;\n&lt;meta name=\"description\" content=\"...\"&gt;\n&lt;meta property=\"og:title\" content=\"...\"&gt;"</span>
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /website/api/content/product-description -->
+  <div id="website-product" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/website/api/content/product-description</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">根据产品基本信息生成具有吸引力的产品详情页描述，支持多语言。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/website/api/content/product-description</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "product_name": "CloudStep 气垫运动鞋",
+  "category": "运动鞋",
+  "specs": {
+    "材质": "飞织网面+TPU支撑",
+    "中底": "氮气气垫科技",
+    "重量": "单只230g",
+    "适用场景": "跑步、健身、日常通勤"
+  },
+  "price": 399,
+  "target_audience": "25-35岁运动爱好者",
+  "tone": "专业运动",
+  "language": "zh-CN"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"short_description"</span>: <span class="string">"CloudStep 气垫运动鞋，搭载氮气气垫科技中底，仅重230g，为你的每一步提供云端般的缓震回弹体验。"</span>,
+    <span class="key">"long_description"</span>: <span class="string">"## 踩上云端的感觉，从此告别双脚疲惫\n\nCloudStep 气垫运动鞋采用最新氮气气垫科技，将缓震与回弹完美融合...\n\n### 核心科技\n- **氮气气垫中底**：比传统EVA缓震效率提升40%，每一步都是弹力十足的推进\n- **飞织网面鞋身**：一体成型工艺，透气排汗，如袜子般贴合双脚\n- **TPU稳定支撑**：后跟内嵌TPU片，高速跑动中保持稳定\n\n### 轻到忘记穿鞋\n单只仅230g，比同级别跑鞋轻15%。无论晨跑5公里还是全天通勤，双脚始终零负担。\n\n### 一双鞋搞定所有场景\n简约设计语言，从跑道到街头无缝切换。搭配运动装率性十足，搭配休闲装同样出彩。"</span>,
+    <span class="key">"selling_points"</span>: [
+      <span class="string">"氮气气垫科技，缓震回弹提升40%"</span>,
+      <span class="string">"单只仅230g，超轻零负担"</span>,
+      <span class="string">"飞织网面，透气如第二层皮肤"</span>,
+      <span class="string">"跑步健身通勤，一双全搞定"</span>
+    ]
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /website/api/content/faq -->
+  <div id="website-faq" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/website/api/content/faq</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">根据产品或服务信息自动生成常见问题与回答，可直接用于网站 FAQ 页面。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/website/api/content/faq</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "product_name": "CloudStep 气垫运动鞋",
+  "product_info": "氮气气垫运动鞋，399元，飞织网面，230g",
+  "faq_count": 5,
+  "categories": ["产品", "物流", "售后"]
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"faqs"</span>: [
+      {
+        <span class="key">"category"</span>: <span class="string">"产品"</span>,
+        <span class="key">"question"</span>: <span class="string">"CloudStep 气垫运动鞋适合跑步吗？"</span>,
+        <span class="key">"answer"</span>: <span class="string">"完全适合！CloudStep 采用氮气气垫中底科技，提供出色的缓震和回弹性能，适合日常跑步训练（10km以内）。搭配TPU后跟支撑，跑步时稳定性极佳。"</span>
+      },
+      {
+        <span class="key">"category"</span>: <span class="string">"产品"</span>,
+        <span class="key">"question"</span>: <span class="string">"鞋码偏大还是偏小？需要买大一码吗？"</span>,
+        <span class="key">"answer"</span>: <span class="string">"CloudStep 采用标准运动鞋码，建议按正常尺码购买。脚偏宽的用户可以考虑大半码。飞织鞋面有一定弹性，穿着几天后会更加贴合。"</span>
+      },
+      {
+        <span class="key">"category"</span>: <span class="string">"物流"</span>,
+        <span class="key">"question"</span>: <span class="string">"下单后多久能收到？"</span>,
+        <span class="key">"answer"</span>: <span class="string">"现货商品48小时内发货，大部分地区2-3天送达。偏远地区可能需要4-5天。下单后可在\"我的订单\"中实时查看物流状态。"</span>
+      },
+      {
+        <span class="key">"category"</span>: <span class="string">"售后"</span>,
+        <span class="key">"question"</span>: <span class="string">"支持退换货吗？"</span>,
+        <span class="key">"answer"</span>: <span class="string">"支持7天无理由退换。鞋子未穿着、不影响二次销售的情况下可申请退货。如有质量问题，30天内可免费换新。"</span>
+      },
+      {
+        <span class="key">"category"</span>: <span class="string">"产品"</span>,
+        <span class="key">"question"</span>: <span class="string">"飞织鞋面耐不耐穿？容易破吗？"</span>,
+        <span class="key">"answer"</span>: <span class="string">"CloudStep 使用的高密度飞织材料经过耐磨测试，正常使用完全没有问题。不过建议避免与粗糙表面大力摩擦，以延长使用寿命。"</span>
+      }
+    ]
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /website/api/translate -->
+  <div id="website-translate" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/website/api/translate</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">高质量 AI 翻译接口，针对电商场景优化，保留专业术语和品牌名称，支持多语言互译。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/website/api/translate</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "text": "CloudStep 气垫运动鞋，搭载氮气气垫科技中底，仅重230g，缓震回弹效率提升40%。",
+  "source_language": "zh-CN",
+  "target_language": "en",
+  "domain": "ecommerce",
+  "preserve_terms": ["CloudStep"]
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"translated_text"</span>: <span class="string">"CloudStep Air Cushion Running Shoes, featuring nitrogen-infused air cushion midsole technology, weighing only 230g per shoe, delivering 40% improved shock absorption and energy return."</span>,
+    <span class="key">"source_language"</span>: <span class="string">"zh-CN"</span>,
+    <span class="key">"target_language"</span>: <span class="string">"en"</span>,
+    <span class="key">"preserved_terms"</span>: [<span class="string">"CloudStep"</span>],
+    <span class="key">"word_count"</span>: { <span class="key">"source"</span>: <span class="num">32</span>, <span class="key">"target"</span>: <span class="num">28</span> }
+  }
+}</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: 操盘辅助 API -->
+<section id="trading-api" class="px-4 py-20" style="max-width: 1000px; margin: 0 auto;">
+  <div class="anim-in">
+    <div class="module-badge orange mb-4">SECTION 04</div>
+    <h2 class="font-serif text-3xl font-bold mb-2" style="color: var(--neon-orange);">操盘辅助 API</h2>
+    <p style="color: var(--text-muted);" class="mb-10">基于 AI 的市场分析、技术指标计算、交易信号识别、策略回测与智能报告生成</p>
+  </div>
+
+  <!-- POST /trading/api/analyze -->
+  <div id="trading-analyze" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/trading/api/analyze</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">提交 OHLCV 数据（开盘、最高、最低、收盘、成交量），获取 AI 综合市场分析报告，包含趋势判断、支撑阻力位、成交量分析等。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/trading/api/analyze</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "symbol": "BTC/USDT",
+  "timeframe": "4h",
+  "ohlcv": [
+    {"time":"2026-03-25T00:00:00Z","open":67350,"high":67890,"low":67100,"close":67520,"volume":12450},
+    {"time":"2026-03-25T04:00:00Z","open":67520,"high":68200,"low":67400,"close":68100,"volume":15230},
+    {"time":"2026-03-25T08:00:00Z","open":68100,"high":68650,"low":67900,"close":68400,"volume":18900},
+    {"time":"2026-03-25T12:00:00Z","open":68400,"high":69100,"low":68200,"close":68950,"volume":22100},
+    {"time":"2026-03-25T16:00:00Z","open":68950,"high":69500,"low":68700,"close":69200,"volume":19800}
+  ],
+  "include_indicators": ["MA", "RSI", "MACD", "BOLL"],
+  "analysis_depth": "detailed"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"symbol"</span>: <span class="string">"BTC/USDT"</span>,
+    <span class="key">"timeframe"</span>: <span class="string">"4h"</span>,
+    <span class="key">"trend"</span>: {
+      <span class="key">"direction"</span>: <span class="string">"bullish"</span>,
+      <span class="key">"strength"</span>: <span class="string">"strong"</span>,
+      <span class="key">"description"</span>: <span class="string">"价格连续5根4小时K线收阳，形成明显上升通道。成交量逐步放大，多头动能充沛。"</span>
+    },
+    <span class="key">"support_resistance"</span>: {
+      <span class="key">"support"</span>: [<span class="num">67100</span>, <span class="num">66500</span>, <span class="num">65800</span>],
+      <span class="key">"resistance"</span>: [<span class="num">69500</span>, <span class="num">70000</span>, <span class="num">71200</span>]
+    },
+    <span class="key">"indicators"</span>: {
+      <span class="key">"MA"</span>: { <span class="key">"MA7"</span>: <span class="num">68434</span>, <span class="key">"MA25"</span>: <span class="num">66890</span>, <span class="key">"MA99"</span>: <span class="num">64200</span>, <span class="key">"signal"</span>: <span class="string">"多头排列"</span> },
+      <span class="key">"RSI"</span>: { <span class="key">"value"</span>: <span class="num">68.5</span>, <span class="key">"signal"</span>: <span class="string">"偏强但未超买"</span> },
+      <span class="key">"MACD"</span>: { <span class="key">"dif"</span>: <span class="num">452</span>, <span class="key">"dea"</span>: <span class="num">320</span>, <span class="key">"histogram"</span>: <span class="num">132</span>, <span class="key">"signal"</span>: <span class="string">"金叉持续，红柱放大"</span> },
+      <span class="key">"BOLL"</span>: { <span class="key">"upper"</span>: <span class="num">70100</span>, <span class="key">"middle"</span>: <span class="num">67800</span>, <span class="key">"lower"</span>: <span class="num">65500</span>, <span class="key">"signal"</span>: <span class="string">"价格运行于中轨上方，趋势偏多"</span> }
+    },
+    <span class="key">"volume_analysis"</span>: <span class="string">"成交量呈逐步放大趋势，与价格上涨形成量价配合，上涨有效性高。"</span>,
+    <span class="key">"ai_summary"</span>: <span class="string">"BTC/USDT 在4小时级别呈现强势多头格局。MA均线多头排列，MACD红柱持续放大，RSI 68.5处于强势区间但尚未进入超买。上方关注69500-70000阻力带，若放量突破70000整数关口，有望向71200延伸。下方67100为短期强支撑。建议多头持有，止损设于67000下方。"</span>,
+    <span class="key">"risk_level"</span>: <span class="string">"medium"</span>
+  }
+}</span></div>
+    </div>
+
+    <div class="tip-box pink">
+      <span style="font-size:18px;">&#9888;</span>
+      <div><strong>风险提示：</strong>AI 分析仅供参考，不构成投资建议。市场有风险，交易需谨慎。请结合自身风险承受能力做出决策。</div>
+    </div>
+  </div>
+
+  <!-- POST /trading/api/indicators -->
+  <div id="trading-indicators" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/trading/api/indicators</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">纯技术指标计算接口，不包含 AI 分析，返回原始指标数值。支持 MA、EMA、RSI、MACD、布林带、KDJ、ATR 等。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/trading/api/indicators</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "symbol": "ETH/USDT",
+  "timeframe": "1h",
+  "indicators": ["RSI", "MACD", "KDJ", "ATR"],
+  "periods": { "RSI": 14, "ATR": 14 },
+  "ohlcv_count": 100
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"symbol"</span>: <span class="string">"ETH/USDT"</span>,
+    <span class="key">"timeframe"</span>: <span class="string">"1h"</span>,
+    <span class="key">"current_price"</span>: <span class="num">3456.80</span>,
+    <span class="key">"indicators"</span>: {
+      <span class="key">"RSI"</span>: { <span class="key">"period"</span>: <span class="num">14</span>, <span class="key">"value"</span>: <span class="num">55.2</span> },
+      <span class="key">"MACD"</span>: { <span class="key">"dif"</span>: <span class="num">12.35</span>, <span class="key">"dea"</span>: <span class="num">8.90</span>, <span class="key">"histogram"</span>: <span class="num">3.45</span> },
+      <span class="key">"KDJ"</span>: { <span class="key">"K"</span>: <span class="num">62.1</span>, <span class="key">"D"</span>: <span class="num">58.4</span>, <span class="key">"J"</span>: <span class="num">69.5</span> },
+      <span class="key">"ATR"</span>: { <span class="key">"period"</span>: <span class="num">14</span>, <span class="key">"value"</span>: <span class="num">45.60</span> }
+    },
+    <span class="key">"timestamp"</span>: <span class="string">"2026-03-28T08:00:00Z"</span>
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /trading/api/signal -->
+  <div id="trading-signal" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/trading/api/signal</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">基于多维指标和 AI 模型，输出综合交易信号，包含方向、入场价、止盈止损位。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/trading/api/signal</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "symbol": "BTC/USDT",
+  "timeframe": "1h",
+  "strategy": "trend_following",
+  "risk_tolerance": "medium"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"symbol"</span>: <span class="string">"BTC/USDT"</span>,
+    <span class="key">"signal"</span>: <span class="string">"BUY"</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.78</span>,
+    <span class="key">"entry_price"</span>: <span class="num">69200</span>,
+    <span class="key">"stop_loss"</span>: <span class="num">67800</span>,
+    <span class="key">"take_profit"</span>: [<span class="num">70500</span>, <span class="num">71800</span>, <span class="num">73000</span>],
+    <span class="key">"risk_reward_ratio"</span>: <span class="num">2.5</span>,
+    <span class="key">"reasoning"</span>: [
+      <span class="string">"4小时级别 MACD 金叉确认"</span>,
+      <span class="string">"价格突破 MA25 后回踩确认支撑"</span>,
+      <span class="string">"成交量较前日放大32%"</span>,
+      <span class="string">"RSI 处于55-70强势区间"</span>
+    ],
+    <span class="key">"timestamp"</span>: <span class="string">"2026-03-28T10:30:00Z"</span>,
+    <span class="key">"expires_at"</span>: <span class="string">"2026-03-28T14:30:00Z"</span>
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /trading/api/strategy/backtest -->
+  <div id="trading-backtest" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/trading/api/strategy/backtest</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">提交交易策略的入场和出场规则，系统使用历史数据进行回测，返回收益率、最大回撤、胜率等关键指标。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/trading/api/strategy/backtest</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "symbol": "BTC/USDT",
+  "timeframe": "4h",
+  "start_date": "2025-01-01",
+  "end_date": "2026-03-28",
+  "initial_capital": 10000,
+  "entry_rules": [
+    {"indicator": "MACD", "condition": "golden_cross"},
+    {"indicator": "RSI", "condition": "above", "value": 50},
+    {"indicator": "volume", "condition": "above_ma", "period": 20}
+  ],
+  "exit_rules": [
+    {"type": "stop_loss", "percentage": 3},
+    {"type": "take_profit", "percentage": 8},
+    {"indicator": "RSI", "condition": "above", "value": 80}
+  ],
+  "position_size": "10%"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"strategy_name"</span>: <span class="string">"MACD金叉+RSI确认+放量"</span>,
+    <span class="key">"backtest_period"</span>: <span class="string">"2025-01-01 至 2026-03-28"</span>,
+    <span class="key">"initial_capital"</span>: <span class="num">10000</span>,
+    <span class="key">"final_capital"</span>: <span class="num">15680</span>,
+    <span class="key">"total_return"</span>: <span class="string">"56.80%"</span>,
+    <span class="key">"annualized_return"</span>: <span class="string">"42.15%"</span>,
+    <span class="key">"max_drawdown"</span>: <span class="string">"-12.30%"</span>,
+    <span class="key">"sharpe_ratio"</span>: <span class="num">1.85</span>,
+    <span class="key">"total_trades"</span>: <span class="num">47</span>,
+    <span class="key">"winning_trades"</span>: <span class="num">29</span>,
+    <span class="key">"losing_trades"</span>: <span class="num">18</span>,
+    <span class="key">"win_rate"</span>: <span class="string">"61.70%"</span>,
+    <span class="key">"avg_profit_per_trade"</span>: <span class="string">"3.21%"</span>,
+    <span class="key">"avg_loss_per_trade"</span>: <span class="string">"-2.15%"</span>,
+    <span class="key">"profit_factor"</span>: <span class="num">2.42</span>,
+    <span class="key">"best_trade"</span>: { <span class="key">"date"</span>: <span class="string">"2025-10-15"</span>, <span class="key">"return"</span>: <span class="string">"+8.00%"</span> },
+    <span class="key">"worst_trade"</span>: { <span class="key">"date"</span>: <span class="string">"2025-06-22"</span>, <span class="key">"return"</span>: <span class="string">"-3.00%"</span> },
+    <span class="key">"ai_evaluation"</span>: <span class="string">"该策略表现良好，胜率61.7%配合2.42的盈亏比，属于正期望值系统。最大回撤12.3%在可接受范围内。建议关注：1）行情震荡期连续止损问题，可考虑加入ADX趋势过滤；2）仓位管理较保守，可在高胜率信号时适当加仓。"</span>
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- POST /trading/api/report -->
+  <div id="trading-report" class="endpoint-card anim-in">
+    <div class="endpoint-header">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/trading/api/report</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">生成 AI 市场综述报告，涵盖行情回顾、热门币种/股票分析、市场情绪、未来展望等。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/trading/api/report</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+  "report_type": "daily",
+  "market": "crypto",
+  "symbols": ["BTC/USDT", "ETH/USDT", "SOL/USDT"],
+  "include_sections": ["market_overview", "top_movers", "sentiment", "outlook"],
+  "language": "zh-CN"
+}'</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"report_date"</span>: <span class="string">"2026-03-28"</span>,
+    <span class="key">"report_type"</span>: <span class="string">"daily"</span>,
+    <span class="key">"market_overview"</span>: <span class="string">"加密市场整体呈回暖态势，总市值重回2.8万亿美元上方。BTC领涨主流币，日内涨幅2.7%，成功站稳69000关口..."</span>,
+    <span class="key">"symbol_analysis"</span>: [
+      {
+        <span class="key">"symbol"</span>: <span class="string">"BTC/USDT"</span>,
+        <span class="key">"price"</span>: <span class="num">69200</span>,
+        <span class="key">"change_24h"</span>: <span class="string">"+2.74%"</span>,
+        <span class="key">"analysis"</span>: <span class="string">"BTC 放量突破68000-69000密集成交区，MACD日线金叉确认，短期目标看向70000整数关口。"</span>
+      },
+      {
+        <span class="key">"symbol"</span>: <span class="string">"ETH/USDT"</span>,
+        <span class="key">"price"</span>: <span class="num">3456</span>,
+        <span class="key">"change_24h"</span>: <span class="string">"+1.82%"</span>,
+        <span class="key">"analysis"</span>: <span class="string">"ETH 跟随 BTC 上行，但涨幅略弱。关注ETH/BTC汇率能否企稳0.05上方。"</span>
+      },
+      {
+        <span class="key">"symbol"</span>: <span class="string">"SOL/USDT"</span>,
+        <span class="key">"price"</span>: <span class="num">185.40</span>,
+        <span class="key">"change_24h"</span>: <span class="string">"+4.15%"</span>,
+        <span class="key">"analysis"</span>: <span class="string">"SOL 表现强势，链上TVL持续攀升，生态活跃度高。技术面突破180阻力位，下一目标200。"</span>
+      }
+    ],
+    <span class="key">"sentiment"</span>: {
+      <span class="key">"fear_greed_index"</span>: <span class="num">72</span>,
+      <span class="key">"label"</span>: <span class="string">"贪婪"</span>,
+      <span class="key">"analysis"</span>: <span class="string">"市场情绪偏向贪婪，社交媒体讨论热度上升。需注意追高风险，建议逢回调布局。"</span>
+    },
+    <span class="key">"outlook"</span>: <span class="string">"短期看涨趋势明确，但需关注70000关口的抛压。若BTC能放量突破并站稳70000，有望开启新一轮上涨行情。操作上建议：持仓者继续持有，空仓者可等待回踩67000-68000区间分批建仓。"</span>
+  }
+}</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 5: API 网关 -->
+<section id="gateway" class="px-4 py-20" style="max-width: 1000px; margin: 0 auto;">
+  <div class="anim-in">
+    <div class="module-badge purple mb-4">SECTION 05</div>
+    <h2 class="font-serif text-3xl font-bold mb-2" style="color: var(--neon-purple);">API 网关</h2>
+    <p style="color: var(--text-muted);" class="mb-10">统一鉴权、限流、路由与审计日志</p>
+  </div>
+
+  <!-- Authentication -->
+  <div class="section-card anim-in mb-8">
+    <h3 class="font-serif text-xl font-bold mb-4" style="color: var(--neon-green);">鉴权方式</h3>
+    <p class="mb-4">所有 API 请求必须在请求头中携带 Bearer Token 进行身份认证：</p>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">HTTP Header</span>
+      </div>
+      <div class="terminal-body"><span class="key">Authorization</span>: <span class="val">Bearer your-gateway-secret-token</span></div>
+    </div>
+
+    <p class="mb-3">Token 在 <span class="font-mono" style="color: var(--neon-pink);">.env</span> 文件中通过 <span class="font-mono" style="color: var(--neon-green);">GATEWAY_API_KEY</span> 配置。支持配置多个 Token（逗号分隔），分配给不同客户端：</p>
+    <div class="config-block mb-4"><span class="comment"># 多个客户端 Token（逗号分隔）</span>
+<span class="key">GATEWAY_API_KEY</span>=<span class="val">token-for-frontend,token-for-mobile,token-for-partner</span></div>
+
+    <div class="tip-box pink">
+      <span style="font-size:18px;">&#9888;</span>
+      <div><strong>注意：</strong>未携带 Token 或 Token 无效的请求将返回 <span class="font-mono" style="color: var(--neon-pink);">401 Unauthorized</span>。请勿将 Token 暴露在前端代码中，建议通过后端代理调用。</div>
+    </div>
+  </div>
+
+  <!-- Rate Limiting -->
+  <div class="section-card anim-in mb-8">
+    <h3 class="font-serif text-xl font-bold mb-4" style="color: var(--neon-orange);">限流策略</h3>
+    <p class="mb-4">网关内置令牌桶限流算法，按 Token 维度独立计数，防止 API 滥用：</p>
+
+    <table class="data-table mb-4">
+      <thead>
+        <tr><th>限流维度</th><th>默认值</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="font-mono" style="color: var(--neon-green);">每分钟请求数</td><td>60 次/分钟</td><td>单个 Token 每分钟最大请求次数</td></tr>
+        <tr><td class="font-mono" style="color: var(--neon-green);">每日请求总量</td><td>10,000 次/天</td><td>单个 Token 每日最大请求总量</td></tr>
+        <tr><td class="font-mono" style="color: var(--neon-green);">并发连接数</td><td>10 个</td><td>单个 Token 同时进行的请求数上限</td></tr>
+        <tr><td class="font-mono" style="color: var(--neon-green);">请求体大小</td><td>1 MB</td><td>单个请求的 Body 最大尺寸</td></tr>
+      </tbody>
+    </table>
+
+    <p class="mb-3">超出限流的请求将收到以下响应：</p>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">429 Too Many Requests</span>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="highlight">false</span>,
+  <span class="key">"error"</span>: {
+    <span class="key">"code"</span>: <span class="string">"RATE_LIMIT_EXCEEDED"</span>,
+    <span class="key">"message"</span>: <span class="string">"请求频率超出限制，请稍后重试"</span>,
+    <span class="key">"retry_after"</span>: <span class="num">30</span>
+  }
+}</span></div>
+    </div>
+    <p style="color: var(--text-muted); font-size: 13px;">响应头中会包含 <span class="font-mono">X-RateLimit-Remaining</span> 和 <span class="font-mono">X-RateLimit-Reset</span> 字段，方便客户端实现退避策略。</p>
+  </div>
+
+  <!-- GET /stats -->
+  <div id="gateway-stats" class="endpoint-card anim-in mb-8">
+    <div class="endpoint-header">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/stats</span>
+    </div>
+    <p class="mb-3" style="color: var(--text-muted);">查询当前 Token 的 API 使用统计数据。</p>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-green);">请求示例</h4>
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">curl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="cmd">curl</span> <span class="flag">-X GET</span> <span class="string">http://localhost:80/stats</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span></div>
+    </div>
+
+    <h4 class="font-mono text-sm mb-2" style="color: var(--neon-blue);">响应示例</h4>
+    <div class="terminal relative">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">response.json</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"success"</span>: <span class="val">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"token_id"</span>: <span class="string">"tok_frontend_***42"</span>,
+    <span class="key">"today"</span>: {
+      <span class="key">"total_requests"</span>: <span class="num">1247</span>,
+      <span class="key">"by_service"</span>: {
+        <span class="key">"social"</span>: <span class="num">523</span>,
+        <span class="key">"website"</span>: <span class="num">412</span>,
+        <span class="key">"trading"</span>: <span class="num">312</span>
+      },
+      <span class="key">"success_rate"</span>: <span class="string">"98.6%"</span>,
+      <span class="key">"avg_latency_ms"</span>: <span class="num">850</span>
+    },
+    <span class="key">"this_month"</span>: {
+      <span class="key">"total_requests"</span>: <span class="num">35420</span>,
+      <span class="key">"total_tokens_used"</span>: <span class="num">2456000</span>
+    },
+    <span class="key">"rate_limit"</span>: {
+      <span class="key">"remaining_per_minute"</span>: <span class="num">48</span>,
+      <span class="key">"remaining_today"</span>: <span class="num">8753</span>,
+      <span class="key">"resets_at"</span>: <span class="string">"2026-03-28T11:00:00Z"</span>
+    }
+  }
+}</span></div>
+    </div>
+  </div>
+
+  <!-- Audit Log -->
+  <div class="section-card anim-in">
+    <h3 class="font-serif text-xl font-bold mb-4" style="color: var(--neon-blue);">审计日志</h3>
+    <p class="mb-4">网关会自动记录每条请求的审计日志，存储在 <span class="font-mono" style="color: var(--neon-green);">data/audit/</span> 目录下，每日一个文件。日志格式如下：</p>
+
+    <div class="terminal relative">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">data/audit/2026-03-28.jsonl</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="output">{
+  <span class="key">"timestamp"</span>: <span class="string">"2026-03-28T10:32:15.234Z"</span>,
+  <span class="key">"token_id"</span>: <span class="string">"tok_frontend_***42"</span>,
+  <span class="key">"method"</span>: <span class="string">"POST"</span>,
+  <span class="key">"path"</span>: <span class="string">"/social/generate"</span>,
+  <span class="key">"service"</span>: <span class="string">"social-bot"</span>,
+  <span class="key">"status_code"</span>: <span class="num">200</span>,
+  <span class="key">"latency_ms"</span>: <span class="num">1250</span>,
+  <span class="key">"request_size"</span>: <span class="num">342</span>,
+  <span class="key">"response_size"</span>: <span class="num">2180</span>,
+  <span class="key">"client_ip"</span>: <span class="string">"192.168.1.100"</span>,
+  <span class="key">"user_agent"</span>: <span class="string">"Mozilla/5.0..."</span>,
+  <span class="key">"llm_tokens"</span>: { <span class="key">"prompt"</span>: <span class="num">256</span>, <span class="key">"completion"</span>: <span class="num">512</span> }
+}</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 6: 配置参考 -->
+<section id="config" class="px-4 py-20" style="max-width: 1000px; margin: 0 auto;">
+  <div class="anim-in">
+    <div class="module-badge mb-4">SECTION 06</div>
+    <h2 class="font-serif text-3xl font-bold mb-2" style="color: var(--neon-green);">配置参考</h2>
+    <p style="color: var(--text-muted);" class="mb-10">.env 环境变量详解、密钥管理、限流调整与知识库配置</p>
+  </div>
+
+  <!-- .env parameters -->
+  <div class="section-card anim-in mb-8">
+    <h3 class="font-serif text-xl font-bold mb-4" style="color: var(--neon-green);">.env 配置文件参数说明</h3>
+
+    <div class="config-block mb-6"><span class="comment"># ═══════════════════════════════════════</span>
+<span class="comment">#  LLM 大语言模型配置</span>
+<span class="comment"># ═══════════════════════════════════════</span>
+
+<span class="comment"># LLM API 地址（兼容 OpenAI 格式）</span>
+<span class="key">LLM_API_URL</span>=<span class="val">http://your-llm-server:8080/v1</span>
+
+<span class="comment"># LLM API 密钥</span>
+<span class="key">LLM_API_KEY</span>=<span class="val">sk-your-api-key</span>
+
+<span class="comment"># 使用的模型名称</span>
+<span class="key">LLM_MODEL</span>=<span class="val">gpt-4o</span>
+
+<span class="comment"># 最大输出 token 数（默认 4096）</span>
+<span class="key">LLM_MAX_TOKENS</span>=<span class="val">4096</span>
+
+<span class="comment"># 温度参数（0-2，默认 0.7）</span>
+<span class="key">LLM_TEMPERATURE</span>=<span class="val">0.7</span>
+
+<span class="comment"># 请求超时时间（秒，默认 120）</span>
+<span class="key">LLM_TIMEOUT</span>=<span class="val">120</span>
+
+<span class="comment"># ═══════════════════════════════════════</span>
+<span class="comment">#  API 网关配置</span>
+<span class="comment"># ═══════════════════════════════════════</span>
+
+<span class="comment"># 网关监听端口</span>
+<span class="key">GATEWAY_PORT</span>=<span class="val">80</span>
+
+<span class="comment"># API 密钥（多个用逗号分隔）</span>
+<span class="key">GATEWAY_API_KEY</span>=<span class="val">your-secret-token</span>
+
+<span class="comment"># 每分钟请求上限（默认 60）</span>
+<span class="key">RATE_LIMIT_PER_MINUTE</span>=<span class="val">60</span>
+
+<span class="comment"># 每日请求上限（默认 10000）</span>
+<span class="key">RATE_LIMIT_PER_DAY</span>=<span class="val">10000</span>
+
+<span class="comment"># 最大并发数（默认 10）</span>
+<span class="key">MAX_CONCURRENT</span>=<span class="val">10</span>
+
+<span class="comment"># ═══════════════════════════════════════</span>
+<span class="comment">#  各服务端口（Docker 内部使用）</span>
+<span class="comment"># ═══════════════════════════════════════</span>
+
+<span class="key">SOCIAL_BOT_PORT</span>=<span class="val">3001</span>
+<span class="key">WEBSITE_PORT</span>=<span class="val">3002</span>
+<span class="key">TRADING_PORT</span>=<span class="val">3003</span>
+
+<span class="comment"># ═══════════════════════════════════════</span>
+<span class="comment">#  日志与数据</span>
+<span class="comment"># ═══════════════════════════════════════</span>
+
+<span class="comment"># 日志级别：debug, info, warn, error</span>
+<span class="key">LOG_LEVEL</span>=<span class="val">info</span>
+
+<span class="comment"># 审计日志保留天数（默认 90）</span>
+<span class="key">AUDIT_LOG_RETENTION_DAYS</span>=<span class="val">90</span>
+
+<span class="comment"># 知识库文档目录</span>
+<span class="key">KNOWLEDGE_BASE_DIR</span>=<span class="val">./data/knowledge</span></div>
+  </div>
+
+  <!-- Adding API Keys -->
+  <div class="section-card anim-in mb-8">
+    <h3 class="font-serif text-xl font-bold mb-4" style="color: var(--neon-pink);">新增 API 密钥</h3>
+    <p class="mb-4">为新客户端分配独立的 API Token，便于分别追踪用量和设置不同限额：</p>
+
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">bash</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="comment"># 1. 生成一个安全的随机 Token</span>
+<span class="cmd">openssl</span> rand -hex 32
+<span class="output">a1b2c3d4e5f6...（64位十六进制字符串）</span>
+
+<span class="comment"># 2. 添加到 .env 文件中（逗号分隔）</span>
+<span class="comment"># 修改前：</span>
+<span class="key">GATEWAY_API_KEY</span>=<span class="val">existing-token-1</span>
+
+<span class="comment"># 修改后：</span>
+<span class="key">GATEWAY_API_KEY</span>=<span class="val">existing-token-1,a1b2c3d4e5f6...</span>
+
+<span class="comment"># 3. 重启网关使配置生效</span>
+<span class="cmd">docker compose restart</span> gateway</div>
+    </div>
+  </div>
+
+  <!-- Adjusting Rate Limits -->
+  <div class="section-card anim-in mb-8">
+    <h3 class="font-serif text-xl font-bold mb-4" style="color: var(--neon-orange);">调整限流参数</h3>
+    <p class="mb-4">根据业务需求调整限流配置：</p>
+
+    <div class="config-block mb-4"><span class="comment"># 场景1：高流量生产环境</span>
+<span class="key">RATE_LIMIT_PER_MINUTE</span>=<span class="val">200</span>
+<span class="key">RATE_LIMIT_PER_DAY</span>=<span class="val">50000</span>
+<span class="key">MAX_CONCURRENT</span>=<span class="val">30</span>
+
+<span class="comment"># 场景2：开发测试（宽松限制）</span>
+<span class="key">RATE_LIMIT_PER_MINUTE</span>=<span class="val">1000</span>
+<span class="key">RATE_LIMIT_PER_DAY</span>=<span class="val">999999</span>
+<span class="key">MAX_CONCURRENT</span>=<span class="val">50</span></div>
+
+    <div class="tip-box blue">
+      <span style="font-size:18px;">&#128161;</span>
+      <div><strong>提示：</strong>修改 <span class="font-mono">.env</span> 后需要重启网关服务：<span class="font-mono" style="color: var(--neon-green);">docker compose restart gateway</span></div>
+    </div>
+  </div>
+
+  <!-- Knowledge Base -->
+  <div class="section-card anim-in">
+    <h3 class="font-serif text-xl font-bold mb-4" style="color: var(--neon-blue);">添加知识库文档</h3>
+    <p class="mb-4">AI 客服（<span class="font-mono">/website/api/chat</span>）支持从知识库文档中检索答案。将文档放入指定目录即可自动加载：</p>
+
+    <div class="terminal relative mb-4">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f57;"></div>
+        <div class="terminal-dot" style="background:#febc2e;"></div>
+        <div class="terminal-dot" style="background:#28c840;"></div>
+        <span class="terminal-title">bash</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="terminal-body"><span class="comment"># 知识库目录结构</span>
+<span class="output">data/knowledge/
+  ├── products/           # 产品手册
+  │   ├── smart-watch.md
+  │   └── headphones.pdf
+  ├── policies/           # 政策文档
+  │   ├── return-policy.md
+  │   └── warranty.md
+  └── faq/                # 已有 FAQ
+      └── common-questions.md</span>
+
+<span class="comment"># 支持的文件格式</span>
+<span class="output">.md  .txt  .pdf  .docx  .json</span>
+
+<span class="comment"># 添加新文档后，重建索引</span>
+<span class="cmd">docker compose exec</span> website <span class="cmd">npm run</span> rebuild-index
+
+<span class="output">✓ 扫描到 8 个文档
+✓ 分割为 156 个文本块
+✓ 向量索引构建完成
+✓ 知识库更新成功</span></div>
+    </div>
+
+    <div class="tip-box green">
+      <span style="font-size:18px;">&#128218;</span>
+      <div><strong>最佳实践：</strong>文档建议使用 Markdown 格式，标题层级清晰，每个主题一个文件。系统会自动将文档分割为合适大小的块并建立向量索引，检索效果与文档质量直接相关。</div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 7: 常见问题 FAQ -->
+<section id="faq" class="px-4 py-20" style="max-width: 1000px; margin: 0 auto;">
+  <div class="anim-in">
+    <div class="module-badge mb-4">SECTION 07</div>
+    <h2 class="font-serif text-3xl font-bold mb-2" style="color: var(--neon-green);">常见问题 FAQ</h2>
+    <p style="color: var(--text-muted);" class="mb-10">部署与运维中的高频问题及解决方案</p>
+  </div>
+
+  <!-- FAQ 1 -->
+  <div class="faq-item anim-in">
+    <div class="faq-q">
+      <span><strong style="color: var(--neon-pink);">Q:</strong> 服务无法启动，docker compose up 报错怎么办？</span>
+      <span class="faq-arrow">&#9660;</span>
+    </div>
+    <div class="faq-a">
+      <p class="mb-3">常见原因及解决方法：</p>
+      <div class="terminal relative mb-3">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">排查步骤</span>
+        </div>
+        <div class="terminal-body"><span class="comment"># 1. 检查 Docker 是否正常运行</span>
+<span class="cmd">docker</span> info
+
+<span class="comment"># 2. 检查端口是否被占用</span>
+<span class="cmd">lsof</span> <span class="flag">-i</span> :80
+<span class="comment"># 如果被占用，修改 .env 中的 GATEWAY_PORT</span>
+
+<span class="comment"># 3. 检查 .env 文件是否存在</span>
+<span class="cmd">ls</span> <span class="flag">-la</span> .env
+<span class="comment"># 如果不存在，执行 cp .env.example .env</span>
+
+<span class="comment"># 4. 查看具体错误日志</span>
+<span class="cmd">docker compose logs</span> <span class="flag">--tail=50</span>
+
+<span class="comment"># 5. 重新构建镜像</span>
+<span class="cmd">docker compose build</span> <span class="flag">--no-cache</span>
+<span class="cmd">docker compose up -d</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ 2 -->
+  <div class="faq-item anim-in">
+    <div class="faq-q">
+      <span><strong style="color: var(--neon-pink);">Q:</strong> LLM 连接被拒绝（Connection Refused），如何排查？</span>
+      <span class="faq-arrow">&#9660;</span>
+    </div>
+    <div class="faq-a">
+      <p class="mb-3">LLM 连接问题通常由以下原因导致：</p>
+      <div class="terminal relative mb-3">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">排查步骤</span>
+        </div>
+        <div class="terminal-body"><span class="comment"># 1. 确认 LLM_API_URL 配置正确</span>
+<span class="cmd">grep</span> LLM_API_URL .env
+<span class="comment"># 注意：Docker 容器内不能用 localhost 访问宿主机</span>
+<span class="comment"># Linux 宿主机请使用: http://host.docker.internal:8080/v1</span>
+<span class="comment"># 或者使用宿主机实际 IP: http://192.168.1.100:8080/v1</span>
+
+<span class="comment"># 2. 测试 LLM 服务是否可达</span>
+<span class="cmd">curl</span> <span class="string">http://your-llm-server:8080/v1/models</span>
+
+<span class="comment"># 3. 检查 API Key 是否正确</span>
+<span class="cmd">curl</span> <span class="string">http://your-llm-server:8080/v1/chat/completions</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer sk-your-key"</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="string">'{"model":"gpt-4o","messages":[{"role":"user","content":"hi"}]}'</span>
+
+<span class="comment"># 4. 检查防火墙/网络策略</span>
+<span class="cmd">docker compose exec</span> gateway <span class="cmd">wget</span> <span class="flag">-qO-</span> <span class="string">http://your-llm-server:8080/v1/models</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ 3 -->
+  <div class="faq-item anim-in">
+    <div class="faq-q">
+      <span><strong style="color: var(--neon-pink);">Q:</strong> 频繁收到 429 限流错误，如何处理？</span>
+      <span class="faq-arrow">&#9660;</span>
+    </div>
+    <div class="faq-a">
+      <p class="mb-3">解决限流问题有两种策略：</p>
+      <p class="mb-2"><strong style="color: var(--neon-green);">方法一：调大限流阈值</strong>（适合确认是正常业务流量）</p>
+      <div class="config-block mb-3"><span class="comment"># 修改 .env</span>
+<span class="key">RATE_LIMIT_PER_MINUTE</span>=<span class="val">200</span>
+<span class="key">RATE_LIMIT_PER_DAY</span>=<span class="val">50000</span></div>
+      <p class="mb-2"><strong style="color: var(--neon-green);">方法二：客户端实现退避重试</strong>（推荐）</p>
+      <div class="terminal relative mb-3">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">retry-example.js</span>
+        </div>
+        <div class="terminal-body"><span class="comment">// 指数退避重试示例</span>
+<span class="highlight">async function</span> <span class="val">callWithRetry</span>(url, options, maxRetries = <span class="num">3</span>) {
+  <span class="highlight">for</span> (<span class="highlight">let</span> i = <span class="num">0</span>; i &lt; maxRetries; i++) {
+    <span class="highlight">const</span> res = <span class="highlight">await</span> fetch(url, options);
+    <span class="highlight">if</span> (res.status !== <span class="num">429</span>) <span class="highlight">return</span> res;
+    <span class="highlight">const</span> wait = Math.pow(<span class="num">2</span>, i) * <span class="num">1000</span>; <span class="comment">// 1s, 2s, 4s</span>
+    <span class="highlight">await</span> <span class="highlight">new</span> Promise(r =&gt; setTimeout(r, wait));
+  }
+  <span class="highlight">throw new</span> Error(<span class="string">'请求超出重试次数限制'</span>);
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ 4 -->
+  <div class="faq-item anim-in">
+    <div class="faq-q">
+      <span><strong style="color: var(--neon-pink);">Q:</strong> 如何添加新的社交媒体平台？</span>
+      <span class="faq-arrow">&#9660;</span>
+    </div>
+    <div class="faq-a">
+      <p class="mb-3">系统支持通过配置文件扩展新平台，无需修改代码：</p>
+      <div class="terminal relative mb-3">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">bash</span>
+        </div>
+        <div class="terminal-body"><span class="comment"># 1. 编辑平台配置文件</span>
+<span class="cmd">vim</span> data/social/platforms.json
+
+<span class="comment"># 2. 添加新平台配置</span>
+<span class="output">{
+  "id": "zhihu",
+  "name": "知乎",
+  "max_words": 3000,
+  "styles": ["回答", "文章", "想法"],
+  "prompt_template": "你是一位知乎资深答主，擅长用专业且有深度的方式回答问题...",
+  "hashtag_format": "#话题#",
+  "content_rules": {
+    "tone": "专业理性",
+    "structure": "总分总",
+    "require_references": true
+  }
+}</span>
+
+<span class="comment"># 3. 重启 social-bot 服务</span>
+<span class="cmd">docker compose restart</span> social-bot
+
+<span class="comment"># 4. 验证新平台已加载</span>
+<span class="cmd">curl</span> <span class="string">http://localhost:80/social/platforms</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ 5 -->
+  <div class="faq-item anim-in">
+    <div class="faq-q">
+      <span><strong style="color: var(--neon-pink);">Q:</strong> 如何添加新的交易技术指标？</span>
+      <span class="faq-arrow">&#9660;</span>
+    </div>
+    <div class="faq-a">
+      <p class="mb-3">交易模块支持通过插件机制扩展指标：</p>
+      <div class="terminal relative mb-3">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#ff5f57;"></div>
+          <div class="terminal-dot" style="background:#febc2e;"></div>
+          <div class="terminal-dot" style="background:#28c840;"></div>
+          <span class="terminal-title">bash</span>
+        </div>
+        <div class="terminal-body"><span class="comment"># 1. 在指标目录下创建新指标文件</span>
+<span class="cmd">vim</span> data/trading/indicators/custom_indicator.json
+
+<span class="comment"># 2. 定义指标计算规则</span>
+<span class="output">{
+  "id": "VWAP",
+  "name": "成交量加权平均价",
+  "description": "Volume Weighted Average Price",
+  "params": {
+    "period": { "default": 20, "min": 5, "max": 200 }
+  },
+  "formula": "sum(close * volume) / sum(volume)",
+  "signal_rules": {
+    "bullish": "price > VWAP",
+    "bearish": "price < VWAP"
+  }
+}</span>
+
+<span class="comment"># 3. 重启 trading 服务</span>
+<span class="cmd">docker compose restart</span> trading
+
+<span class="comment"># 4. 在 API 调用中使用新指标</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="string">http://localhost:80/trading/api/indicators</span> \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer your-gateway-secret-token"</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="string">'{"symbol":"BTC/USDT","indicators":["VWAP"]}'</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="background: var(--bg-mid); border-top: 1px solid rgba(0,255,136,0.1); padding: 40px 20px; text-align: center;">
+  <div class="font-mono text-sm" style="color: var(--text-muted);">AI Platform API Manual &copy; 2026 &middot; Generated with Neon Noir Theme</div>
+</footer>
+
+</div><!-- end main-content -->
+
+<!-- SCRIPTS_PLACEHOLDER -->
+<script>
+// TOC toggle
+function toggleToc() {
+  const sb = document.getElementById('tocSidebar');
+  const mc = document.getElementById('mainContent');
+  if (window.innerWidth <= 1024) {
+    sb.classList.toggle('mobile-show');
+  } else {
+    sb.classList.toggle('hidden');
+    mc.classList.toggle('full');
+  }
+}
+// Close TOC on mobile when clicking a link
+document.querySelectorAll('.toc-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (window.innerWidth <= 1024) {
+      document.getElementById('tocSidebar').classList.remove('mobile-show');
+    }
+  });
+});
+
+// Progress bar
+window.addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  const s = window.scrollY;
+  document.getElementById('progress-bar').style.transform = `scaleX(${s/h})`;
+});
+
+// GSAP animations
+gsap.registerPlugin(ScrollTrigger);
+gsap.from('#heroAnim1', { opacity:0, y:30, duration:0.8, delay:0.2 });
+gsap.from('#heroAnim2', { opacity:0, y:30, duration:0.8, delay:0.4 });
+gsap.from('#heroAnim3', { opacity:0, y:30, duration:0.8, delay:0.6 });
+
+document.querySelectorAll('.anim-in').forEach(el => {
+  gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.7,
+    scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' }
+  });
+});
+
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.addEventListener('click', () => {
+    const a = q.nextElementSibling;
+    const arrow = q.querySelector('.faq-arrow');
+    a.classList.toggle('open');
+    arrow.classList.toggle('open');
+  });
+});
+
+// Copy button
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const code = btn.closest('.terminal').querySelector('.terminal-body').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  });
+});
+
+// Active TOC tracking
+const sections = document.querySelectorAll('section[id]');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 200) current = s.id;
+  });
+  document.querySelectorAll('.toc-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.getAttribute('href') === '#' + current) item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

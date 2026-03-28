@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClawd AI Platform - 文档中心</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--surface:#111827;--surface2:#1a2332;
+  --border:#1e2d3d;--text:#e2e8f0;--text2:#94a3b8;
+  --accent:#06b6d4;--accent2:#8b5cf6;--accent3:#10b981;
+  --glow:rgba(6,182,212,.15);
+}
+body{
+  font-family:'Inter','Noto Sans SC',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+}
+.noise{
+  position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.glow-orb{
+  position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;
+}
+.glow-orb.a{width:500px;height:500px;background:rgba(6,182,212,.08);top:-150px;right:-100px}
+.glow-orb.b{width:400px;height:400px;background:rgba(139,92,246,.06);bottom:-100px;left:-100px}
+.container{
+  position:relative;z-index:1;max-width:960px;margin:0 auto;
+  padding:60px 24px 80px;
+}
+header{text-align:center;margin-bottom:64px}
+.logo{
+  display:inline-flex;align-items:center;gap:12px;
+  margin-bottom:24px;
+}
+.logo-icon{
+  width:52px;height:52px;border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:800;color:#fff;
+  box-shadow:0 0 30px rgba(6,182,212,.3);
+}
+.logo-text{
+  font-size:28px;font-weight:700;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+h1{
+  font-size:clamp(32px,5vw,48px);font-weight:800;
+  line-height:1.2;margin-bottom:16px;
+  letter-spacing:-.02em;
+}
+h1 span{
+  background:linear-gradient(135deg,#06b6d4,#8b5cf6,#10b981);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.subtitle{
+  font-size:18px;color:var(--text2);line-height:1.6;
+  max-width:640px;margin:0 auto;
+}
+.cards{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;
+  margin-bottom:48px;
+}
+@media(max-width:640px){.cards{grid-template-columns:1fr}}
+.card{
+  position:relative;border-radius:16px;overflow:hidden;
+  background:var(--surface);border:1px solid var(--border);
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+  text-decoration:none;color:inherit;display:flex;flex-direction:column;
+}
+.card:hover{
+  border-color:var(--accent);transform:translateY(-4px);
+  box-shadow:0 20px 60px rgba(6,182,212,.12),0 0 0 1px rgba(6,182,212,.2);
+}
+.card-header{
+  padding:32px 28px 0;
+}
+.card-icon{
+  width:56px;height:56px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:20px;
+}
+.card:nth-child(1) .card-icon{background:linear-gradient(135deg,rgba(6,182,212,.15),rgba(6,182,212,.05))}
+.card:nth-child(2) .card-icon{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(139,92,246,.05))}
+.card-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.card-desc{font-size:14px;color:var(--text2);line-height:1.7}
+.card-body{
+  padding:20px 28px 28px;flex:1;display:flex;flex-direction:column;
+}
+.card-tags{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:20px;
+}
+.tag{
+  font-size:11px;padding:4px 10px;border-radius:6px;
+  background:var(--surface2);color:var(--text2);border:1px solid var(--border);
+  font-weight:500;
+}
+.card-arrow{
+  position:absolute;top:28px;right:28px;width:36px;height:36px;
+  border-radius:10px;background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .3s;color:var(--text2);font-size:16px;
+}
+.card:hover .card-arrow{
+  background:var(--accent);color:#fff;border-color:var(--accent);
+  transform:translate(2px,-2px);
+}
+.info-bar{
+  text-align:center;padding:24px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--border);
+  margin-bottom:32px;
+}
+.info-bar p{font-size:14px;color:var(--text2);line-height:1.7}
+.info-bar a{color:var(--accent);text-decoration:none;font-weight:500}
+.info-bar a:hover{text-decoration:underline}
+footer{
+  text-align:center;color:var(--text2);font-size:13px;
+  padding-top:24px;border-top:1px solid var(--border);
+}
+footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="glow-orb a"></div>
+<div class="glow-orb b"></div>
+
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">OC</div>
+      <div class="logo-text">OpenClawd AI Platform</div>
+    </div>
+    <h1>文档<span>中心</span></h1>
+    <p class="subtitle">
+      一站式 AI 服务平台完整文档。涵盖本地部署运维教程与 API 使用手册，
+      助你从零搭建到生产运行。
+    </p>
+  </header>
+
+  <div class="cards">
+    <a class="card" href="deployment-guide.html">
+      <div class="card-arrow">→</div>
+      <div class="card-header">
+        <div class="card-icon">🖥️</div>
+        <div class="card-title">部署与运维指南</div>
+        <div class="card-desc">
+          面向 AI 系统部署工程师的完全教程。从物理机硬件选型、GPU 驱动安装，
+          到 Docker 编排、7×24 监控、多机批量管理、故障应急处理，12 大模块全覆盖。
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-tags">
+          <span class="tag">硬件选型</span>
+          <span class="tag">NVIDIA 驱动</span>
+          <span class="tag">CUDA/cuDNN</span>
+          <span class="tag">vLLM 部署</span>
+          <span class="tag">Docker</span>
+          <span class="tag">Prometheus</span>
+          <span class="tag">Grafana</span>
+          <span class="tag">Ansible</span>
+          <span class="tag">故障排查</span>
+          <span class="tag">安全加固</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="card" href="api-manual.html">
+      <div class="card-arrow">→</div>
+      <div class="card-header">
+        <div class="card-icon">📡</div>
+        <div class="card-title">API 使用手册</div>
+        <div class="card-desc">
+          平台全部 API 端点的详细使用文档。包含社交机器人、智能网站、
+          交易助手三大服务的完整请求参数、响应格式和 curl 示例。
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-tags">
+          <span class="tag">社交机器人</span>
+          <span class="tag">10 平台</span>
+          <span class="tag">AI 聊天</span>
+          <span class="tag">RAG</span>
+          <span class="tag">SEO 生成</span>
+          <span class="tag">技术指标</span>
+          <span class="tag">策略回测</span>
+          <span class="tag">交易信号</span>
+          <span class="tag">网关认证</span>
+          <span class="tag">限流</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="info-bar">
+    <p>
+      源代码仓库：<a href="https://github.com/0xCaptain888/openclawd-ai-platform" target="_blank">github.com/0xCaptain888/openclawd-ai-platform</a>
+      &nbsp;·&nbsp; 包含完整的 Docker Compose 编排、4 大服务源码、46 个文件、6300+ 行代码
+    </p>
+  </div>
+
+  <footer>
+    <p>OpenClawd AI Platform &copy; 2024 &nbsp;·&nbsp; <a href="https://github.com/0xCaptain888/openclawd-ai-platform">GitHub</a></p>
+  </footer>
+</div>
+</body>
+</html>

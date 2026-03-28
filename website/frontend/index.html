@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 智能平台</title>
+  <meta name="description" content="AI驱动的智能网站平台，提供智能客服、内容生成、SEO优化等服务。" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    /* Tailwind dark mode config */
+    tailwind.config = {
+      darkMode: "class",
+    };
+    /* Apply saved theme or system preference */
+    (function () {
+      const stored = localStorage.getItem("theme");
+      if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+  <style>
+    /* Smooth transitions for theme switching */
+    *, *::before, *::after { transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+    /* Hide scrollbar on chat but keep scrollable */
+    #chat-messages::-webkit-scrollbar { width: 4px; }
+    #chat-messages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+    .dark #chat-messages::-webkit-scrollbar-thumb { background: #475569; }
+  </style>
+</head>
+<body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans antialiased">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2 text-xl font-bold text-blue-600 dark:text-blue-400">
+        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 3a2 2 0 110 4 2 2 0 010-4zm4 10H8a1 1 0 010-2h8a1 1 0 010 2z"/></svg>
+        AI 智能平台
+      </a>
+      <!-- Desktop links -->
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="#features" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">功能</a>
+        <a href="#blog" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">博客</a>
+        <a href="#contact" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">联系我们</a>
+        <!-- Theme toggle -->
+        <button id="theme-toggle" aria-label="Toggle theme"
+          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <svg id="icon-sun" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 7.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <svg id="icon-moon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          </svg>
+        </button>
+      </div>
+      <!-- Mobile menu button -->
+      <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 pb-4 space-y-2 text-sm font-medium">
+      <a href="#features" class="block py-2 hover:text-blue-600">功能</a>
+      <a href="#blog" class="block py-2 hover:text-blue-600">博客</a>
+      <a href="#contact" class="block py-2 hover:text-blue-600">联系我们</a>
+    </div>
+  </nav>
+  <script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
+    });
+    document.getElementById("mobile-menu-btn").addEventListener("click", () => {
+      document.getElementById("mobile-menu").classList.toggle("hidden");
+    });
+  </script>
+
+  <!-- Hero Section -->
+  <section class="pt-28 pb-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto text-center">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+        用 <span class="text-blue-600 dark:text-blue-400">AI</span> 赋能您的业务
+      </h1>
+      <p class="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
+        智能客服、内容生成、SEO优化 —— 一站式AI解决方案，助力企业数字化转型。
+      </p>
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#features" class="px-8 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base transition-colors shadow-lg shadow-blue-600/25">
+          了解更多
+        </a>
+        <a href="#contact" class="px-8 py-3 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-blue-600 dark:hover:border-blue-400 font-semibold text-base transition-colors">
+          免费试用
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-3xl sm:text-4xl font-bold text-center mb-4">核心功能</h2>
+      <p class="text-center text-gray-600 dark:text-gray-400 mb-16 max-w-xl mx-auto">基于先进大语言模型，为您提供全方位的AI内容服务。</p>
+      <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Feature cards -->
+        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 21l1.8-4A7.44 7.44 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">智能客服</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">7x24小时AI客服，支持知识库问答，精准回复客户咨询。</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+          <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">SEO内容生成</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">自动生成SEO优化文章、Meta标签，提升搜索引擎排名。</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+          <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">多语言翻译</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">支持多语言内容翻译，轻松拓展国际市场。</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+          <div class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">商品描述生成</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">自动生成吸引人的商品描述，提高转化率。</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+          <div class="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">FAQ自动生成</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">根据产品或服务信息自动生成常见问题与解答。</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+          <div class="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">知识库管理</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">简单的知识库系统，支持RAG检索增强生成，可升级为向量数据库。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Blog / Content Section -->
+  <section id="blog" class="py-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-3xl sm:text-4xl font-bold text-center mb-4">最新文章</h2>
+      <p class="text-center text-gray-600 dark:text-gray-400 mb-16 max-w-xl mx-auto">探索AI技术如何改变商业世界。</p>
+      <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <article class="group rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow bg-white dark:bg-gray-800">
+          <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600"></div>
+          <div class="p-6">
+            <span class="text-xs font-medium text-blue-600 dark:text-blue-400">AI 趋势</span>
+            <h3 class="mt-2 font-semibold text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              如何利用AI提升客户服务体验
+            </h3>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
+              探索企业如何通过智能客服系统降低成本、提高客户满意度，实现24小时不间断服务。
+            </p>
+            <div class="mt-4 text-xs text-gray-500 dark:text-gray-500">2026年3月15日</div>
+          </div>
+        </article>
+        <article class="group rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow bg-white dark:bg-gray-800">
+          <div class="h-48 bg-gradient-to-br from-green-400 to-teal-600"></div>
+          <div class="p-6">
+            <span class="text-xs font-medium text-green-600 dark:text-green-400">SEO</span>
+            <h3 class="mt-2 font-semibold text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              AI驱动的SEO内容策略指南
+            </h3>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
+              了解如何使用AI工具自动生成高质量、搜索引擎友好的内容，抢占流量先机。
+            </p>
+            <div class="mt-4 text-xs text-gray-500 dark:text-gray-500">2026年3月10日</div>
+          </div>
+        </article>
+        <article class="group rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow bg-white dark:bg-gray-800">
+          <div class="h-48 bg-gradient-to-br from-purple-400 to-pink-600"></div>
+          <div class="p-6">
+            <span class="text-xs font-medium text-purple-600 dark:text-purple-400">电商</span>
+            <h3 class="mt-2 font-semibold text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              电商平台的AI内容自动化实践
+            </h3>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
+              从商品描述到FAQ，AI如何帮助电商卖家批量生成高转化率内容。
+            </p>
+            <div class="mt-4 text-xs text-gray-500 dark:text-gray-500">2026年3月5日</div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="contact" class="bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <h3 class="font-bold text-lg text-blue-600 dark:text-blue-400 mb-4">AI 智能平台</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            用人工智能技术赋能企业，提供智能客服、内容生成、SEO优化等一站式解决方案。
+          </p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">产品</h4>
+          <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">智能客服</a></li>
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">SEO工具</a></li>
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">内容生成</a></li>
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">多语言翻译</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">公司</h4>
+          <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">关于我们</a></li>
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">博客</a></li>
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">招聘</a></li>
+            <li><a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">联系我们</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">联系方式</h4>
+          <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <li>contact@example.com</li>
+            <li>+86 400-XXX-XXXX</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500 dark:text-gray-500">
+        &copy; 2026 AI 智能平台. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Chat widget -->
+  <script src="/static/chat.js"></script>
+</body>
+</html>

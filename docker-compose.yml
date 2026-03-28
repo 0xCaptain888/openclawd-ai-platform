@@ -1,0 +1,216 @@
+# ==============================================================================
+# AI 统一平台 - Docker Compose 编排
+# ==============================================================================
+# 使用方法:
+#   1. 复制 .env.example 为 .env 并修改配置
+#   2. docker compose up -d
+#   3. 访问 http://localhost 即可使用 API Gateway
+# ==============================================================================
+
+services:
+
+  # --------------------------------------------------------------------------
+  # API 网关 - 统一入口，负责认证、限流、路由、审计日志
+  # 所有外部请求都通过网关访问各后端服务
+  # --------------------------------------------------------------------------
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: ai-gateway
+    ports:
+      - "${GATEWAY_PORT:-80}:80"
+    environment:
+      - LLM_API_URL=${LLM_API_URL:-http://host.docker.internal:8000/v1}
+      - SOCIAL_BOT_URL=http://social-bot:8010
+      - WEBSITE_BACKEND_URL=http://website-backend:4000
+      - TRADING_URL=http://trading:8020
+      - API_KEYS=${API_KEYS:-sk-admin-001:admin:120:50000}
+      - LOG_DIR=/var/log/ai-gateway
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - gateway-logs:/var/log/ai-gateway
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ai-platform
+    depends_on:
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --------------------------------------------------------------------------
+  # 社交机器人服务 - 自动化社交媒体互动（内部端口 8010）
+  # 通过网关 /social/* 路径访问
+  # --------------------------------------------------------------------------
+  social-bot:
+    build:
+      context: ./social-bot
+      dockerfile: Dockerfile
+    container_name: ai-social-bot
+    expose:
+      - "8010"
+    environment:
+      - LLM_API_URL=${LLM_API_URL:-http://host.docker.internal:8000/v1}
+      - MODEL_NAME=${MODEL_NAME:-Qwen2-72B-Instruct-GPTQ-Int4}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - API_KEY=${SOCIAL_BOT_API_KEY:-sk-social-internal-001}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - social-bot-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8010/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - ai-platform
+    depends_on:
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --------------------------------------------------------------------------
+  # 网站前端 - Nginx 静态资源服务（内部端口 3000）
+  # 通过网关或直接映射端口访问前端页面
+  # --------------------------------------------------------------------------
+  website-frontend:
+    build:
+      context: ./website/frontend
+      dockerfile: Dockerfile
+    container_name: ai-website-frontend
+    expose:
+      - "3000"
+    environment:
+      - API_BASE_URL=http://gateway:80/website
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ai-platform
+
+  # --------------------------------------------------------------------------
+  # 网站后端 - API 服务，处理业务逻辑和 LLM 调用（内部端口 4000）
+  # 通过网关 /website/* 路径访问
+  # --------------------------------------------------------------------------
+  website-backend:
+    build:
+      context: ./website/backend
+      dockerfile: Dockerfile
+    container_name: ai-website-backend
+    expose:
+      - "4000"
+    environment:
+      - LLM_API_URL=${LLM_API_URL:-http://host.docker.internal:8000/v1}
+      - MODEL_NAME=${MODEL_NAME:-Qwen2-72B-Instruct-GPTQ-Int4}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - API_KEY=${WEBSITE_BACKEND_API_KEY:-sk-web-internal-001}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - website-backend-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - ai-platform
+    depends_on:
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --------------------------------------------------------------------------
+  # 交易服务 - AI 驱动的交易策略执行（内部端口 8020）
+  # 通过网关 /trading/* 路径访问
+  # --------------------------------------------------------------------------
+  trading:
+    build:
+      context: ./trading
+      dockerfile: Dockerfile
+    container_name: ai-trading
+    expose:
+      - "8020"
+    environment:
+      - LLM_API_URL=${LLM_API_URL:-http://host.docker.internal:8000/v1}
+      - MODEL_NAME=${MODEL_NAME:-Qwen2-72B-Instruct-GPTQ-Int4}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - API_KEY=${TRADING_API_KEY:-sk-trade-internal-001}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - trading-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8020/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - ai-platform
+    depends_on:
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --------------------------------------------------------------------------
+  # Redis - 用于任务队列、调度器、缓存
+  # 各服务共享同一 Redis 实例
+  # --------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ai-redis
+    expose:
+      - "6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - ai-platform
+
+# ==============================================================================
+# 网络配置 - 所有服务使用同一 bridge 网络通信
+# ==============================================================================
+networks:
+  ai-platform:
+    driver: bridge
+    name: ai-platform-network
+
+# ==============================================================================
+# 持久化存储卷
+# ==============================================================================
+volumes:
+  gateway-logs:
+    name: ai-gateway-logs
+  social-bot-data:
+    name: ai-social-bot-data
+  website-backend-data:
+    name: ai-website-backend-data
+  trading-data:
+    name: ai-trading-data
+  redis-data:
+    name: ai-redis-data

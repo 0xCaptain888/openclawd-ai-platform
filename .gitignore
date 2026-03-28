@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.log
+/data/
+/logs/
+.DS_Store
+mock_llm.py

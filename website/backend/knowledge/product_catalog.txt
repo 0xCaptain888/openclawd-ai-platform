@@ -1,0 +1,85 @@
+===== PRODUCT CATALOG =====
+Last Updated: 2026-03-01
+
+--- Product 1 ---
+Name: SmartHome Hub Pro
+SKU: SH-HUB-001
+Price: $149.99
+Category: Smart Home
+Description: The SmartHome Hub Pro is a central controller for all your smart home devices. It supports Zigbee, Z-Wave, Wi-Fi, and Bluetooth protocols, allowing you to manage lights, thermostats, locks, cameras, and more from a single app. Features voice control via built-in microphone array.
+Key Features:
+  - Supports 500+ smart home brands
+  - 7-inch touchscreen display
+  - Built-in speaker for voice assistant
+  - Automatic device discovery
+  - Energy monitoring dashboard
+  - Local processing for privacy (no cloud required for basic functions)
+Availability: In Stock
+Warranty: 2 years
+
+--- Product 2 ---
+Name: AirPure 360 Air Purifier
+SKU: AP-360-002
+Price: $299.99
+Category: Home Appliance
+Description: The AirPure 360 uses a 4-stage HEPA filtration system to remove 99.97% of particles, allergens, smoke, and odors from rooms up to 800 sq ft. Real-time air quality monitoring with PM2.5, VOC, and humidity sensors displayed on the LED panel.
+Key Features:
+  - True HEPA H13 filter + activated carbon layer
+  - Covers up to 800 sq ft
+  - Ultra-quiet night mode (22 dB)
+  - Smart auto-mode adjusts fan speed based on air quality
+  - Filter replacement indicator
+  - Compatible with SmartHome Hub Pro
+Availability: In Stock
+Warranty: 3 years
+
+--- Product 3 ---
+Name: ErgoDesk Standing Desk
+SKU: ED-STD-003
+Price: $549.99
+Category: Office Furniture
+Description: The ErgoDesk is a motorized standing desk with programmable height presets. The desk surface is made from sustainable bamboo with a scratch-resistant coating. Dual motor system provides smooth, quiet height adjustment from 25.5" to 51" in under 10 seconds.
+Key Features:
+  - 60" x 30" bamboo desktop
+  - 4 programmable height presets
+  - Built-in cable management tray
+  - Anti-collision safety system
+  - Weight capacity: 300 lbs
+  - Child lock feature
+  - Integrated USB-C and USB-A charging ports
+Availability: In Stock (ships in 3-5 business days)
+Warranty: 5 years (frame), 2 years (electronics)
+
+--- Product 4 ---
+Name: FocusLens Webcam 4K
+SKU: FL-WC4K-004
+Price: $89.99
+Category: Electronics / Peripherals
+Description: Professional-grade 4K webcam with AI-powered auto-framing and background blur. Ideal for video conferencing, streaming, and content creation. Features a Sony STARVIS sensor for exceptional low-light performance.
+Key Features:
+  - 4K resolution at 30fps, 1080p at 60fps
+  - AI auto-framing follows you as you move
+  - Built-in noise-canceling dual microphones
+  - Hardware-level background blur (no software needed)
+  - Privacy shutter
+  - Universal mount fits monitors and tripods
+  - USB-C plug and play (no drivers needed)
+Availability: In Stock
+Warranty: 2 years
+
+--- Product 5 ---
+Name: PowerVault Portable Charger 20000
+SKU: PV-20K-005
+Price: $59.99
+Category: Electronics / Accessories
+Description: Ultra-slim 20,000 mAh portable charger with 65W USB-C PD fast charging. Can charge a laptop, phone, and tablet simultaneously. Features a smart LED display showing remaining capacity, charging speed, and estimated time to full charge.
+Key Features:
+  - 20,000 mAh capacity
+  - 65W USB-C Power Delivery output
+  - Charges most laptops (MacBook Air, Dell XPS, etc.)
+  - 3 output ports: 1x USB-C PD, 2x USB-A QC 3.0
+  - Pass-through charging
+  - Airline-approved (under 100Wh)
+  - Weight: 12.5 oz
+Availability: In Stock
+Warranty: 18 months

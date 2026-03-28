@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI交易助手</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+/* 深色交易终端主题 */
+:root { --bg-primary: #0a0e17; --bg-card: #111827; --bg-hover: #1f2937; --border: #1e293b; --text-primary: #e2e8f0; --text-secondary: #94a3b8; --green: #22c55e; --red: #ef4444; --blue: #3b82f6; --yellow: #eab308; }
+body { background: var(--bg-primary); color: var(--text-primary); font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+.btn { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; border: none; }
+.btn-primary { background: var(--blue); color: white; }
+.btn-primary:hover { background: #2563eb; }
+.btn-green { background: #166534; color: var(--green); }
+.btn-red { background: #7f1d1d; color: var(--red); }
+.signal-bull { color: var(--green); }
+.signal-bear { color: var(--red); }
+.signal-neutral { color: var(--yellow); }
+.score-bar { height: 8px; border-radius: 4px; background: #1e293b; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #3b82f680; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.fade-in { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+select, input { background: #1e293b; color: var(--text-primary); border: 1px solid #374151; border-radius: 6px; padding: 6px 10px; font-size: 13px; }
+::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+.indicator-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+.alert-item { padding: 8px 12px; border-left: 3px solid; margin-bottom: 6px; border-radius: 0 6px 6px 0; background: #1e293b; font-size: 13px; }
+.markdown-body h1,.markdown-body h2,.markdown-body h3 { color: #60a5fa; margin: 12px 0 6px; } .markdown-body strong { color: #f59e0b; } .markdown-body ul { padding-left: 18px; } .markdown-body li { margin: 2px 0; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- 顶部导航 -->
+<header class="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="text-xl font-bold text-blue-400">&#9670; AI交易助手</div>
+    <span class="text-xs text-gray-500">v1.0</span>
+  </div>
+  <div class="flex items-center gap-3">
+    <select id="scenarioSelect" class="text-xs">
+      <option value="bullish">上升趋势</option>
+      <option value="bearish">下降趋势</option>
+      <option value="sideways">震荡行情</option>
+      <option value="volatile">高波动</option>
+    </select>
+    <input id="numCandles" type="number" value="300" min="50" max="1000" class="w-20 text-xs" title="K线数量">
+    <button id="loadBtn" class="btn btn-primary text-xs">加载数据</button>
+    <span id="statusDot" class="w-2 h-2 rounded-full bg-green-500 inline-block" title="服务状态"></span>
+  </div>
+</header>
+
+<!-- 主内容区 -->
+<div class="p-3 grid grid-cols-1 lg:grid-cols-4 gap-3" style="height: calc(100vh - 56px);">
+
+  <!-- 左侧：K线图 + 指标图 -->
+  <div class="lg:col-span-3 flex flex-col gap-3 min-h-0">
+    <!-- K线图区域 -->
+    <div class="card flex-1 min-h-0 p-2">
+      <div class="flex justify-between items-center mb-1 px-2">
+        <span class="text-sm text-gray-400" id="chartTitle">等待加载数据...</span>
+        <div class="flex gap-1">
+          <button class="btn text-xs bg-gray-800" onclick="toggleIndicator('ma')">均线</button>
+          <button class="btn text-xs bg-gray-800" onclick="toggleIndicator('bb')">布林带</button>
+          <button class="btn text-xs bg-gray-800" onclick="toggleIndicator('vol')">成交量</button>
+        </div>
+      </div>
+      <div id="mainChart" style="width:100%;height:calc(100% - 30px);"></div>
+    </div>
+
+    <!-- 底部：回测面板 -->
+    <div class="card p-3" style="max-height: 220px; overflow-y: auto;">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-bold text-gray-300">&#9881; 策略回测</span>
+        <button id="backtestBtn" class="btn btn-primary text-xs">运行回测</button>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-2">
+        <div>
+          <label class="text-gray-500">入场: RSI &lt;</label>
+          <input id="entryRsi" type="number" value="30" class="w-full mt-1">
+        </div>
+        <div>
+          <label class="text-gray-500">出场: RSI &gt;</label>
+          <input id="exitRsi" type="number" value="70" class="w-full mt-1">
+        </div>
+        <div>
+          <label class="text-gray-500">止损 %</label>
+          <input id="stopLoss" type="number" value="5" step="0.5" class="w-full mt-1">
+        </div>
+        <div>
+          <label class="text-gray-500">止盈 %</label>
+          <input id="takeProfit" type="number" value="10" step="0.5" class="w-full mt-1">
+        </div>
+      </div>
+      <div id="backtestResult" class="text-xs text-gray-400">点击"运行回测"开始测试策略</div>
+    </div>
+  </div>
+
+  <!-- 右侧面板 -->
+  <div class="flex flex-col gap-3 min-h-0 overflow-hidden">
+
+    <!-- 信号面板 -->
+    <div class="card p-3 flex-shrink-0" style="max-height: 260px; overflow-y: auto;">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-bold text-gray-300">&#9889; 交易信号</span>
+        <button id="signalBtn" class="btn btn-primary text-xs">刷新</button>
+      </div>
+      <div id="signalPanel" class="text-xs text-gray-400">加载数据后显示信号</div>
+    </div>
+
+    <!-- 指标面板 -->
+    <div class="card p-3 flex-shrink-0" style="max-height: 220px; overflow-y: auto;">
+      <span class="text-sm font-bold text-gray-300 mb-2 block">&#128202; 实时指标</span>
+      <div id="indicatorPanel" class="text-xs text-gray-400">加载数据后显示指标</div>
+    </div>
+
+    <!-- AI分析面板 -->
+    <div class="card p-3 flex-1 min-h-0 overflow-y-auto">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-bold text-gray-300">&#129302; AI分析</span>
+        <div class="flex gap-1">
+          <button id="analyzeBtn" class="btn btn-primary text-xs">分析</button>
+          <button id="reportBtn" class="btn text-xs bg-gray-800 text-gray-300">报告</button>
+        </div>
+      </div>
+      <div id="aiPanel" class="text-xs text-gray-400 markdown-body">点击"分析"获取AI市场解读</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 全局状态
+// ============================================================
+const API = window.location.origin;
+let rawCandles = [];
+let indicatorData = null;
+let mainChart = null;
+let showMA = true, showBB = false, showVol = true;
+
+// ============================================================
+// 工具函数
+// ============================================================
+function $(id) { return document.getElementById(id); }
+
+async function api(path, body = null) {
+  const opts = body ? { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) } : {};
+  const r = await fetch(API + path, opts);
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.detail || r.statusText); }
+  return r.json();
+}
+
+function last(arr) { if (!arr) return null; for (let i = arr.length - 1; i >= 0; i--) { if (arr[i] !== null) return arr[i]; } return null; }
+function fmt(v, d=2) { return v !== null && v !== undefined ? Number(v).toFixed(d) : 'N/A'; }
+
+function simpleMarkdown(text) {
+  return text
+    .replace(/### (.+)/g, '<h3>$1</h3>')
+    .replace(/## (.+)/g, '<h2>$1</h2>')
+    .replace(/# (.+)/g, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n- /g, '\n<li>')
+    .replace(/\n\d+\. /g, '\n<li>')
+    .replace(/\n/g, '<br>');
+}
+
+// ============================================================
+// 数据加载
+// ============================================================
+async function loadData() {
+  const scenario = $('scenarioSelect').value;
+  const num = parseInt($('numCandles').value) || 300;
+  $('loadBtn').innerHTML = '<span class="loading"></span>';
+  try {
+    const data = await api(`/api/sample-data?scenario=${scenario}&num_candles=${num}`);
+    rawCandles = data.candles;
+    $('chartTitle').textContent = `${scenario.toUpperCase()} | ${rawCandles.length} 根K线 | 最新价: ${fmt(rawCandles[rawCandles.length-1].close, 4)}`;
+    await loadIndicators();
+    renderChart();
+    await loadSignals();
+  } catch(e) { alert('加载失败: ' + e.message); }
+  $('loadBtn').textContent = '加载数据';
+}
+
+async function loadIndicators() {
+  const body = { candles: rawCandles };
+  const res = await api('/api/indicators', body);
+  indicatorData = res.indicators;
+  renderIndicatorPanel(res);
+}
+
+// ============================================================
+// 图表渲染
+// ============================================================
+function renderChart() {
+  if (!rawCandles.length) return;
+  if (!mainChart) { mainChart = echarts.init($('mainChart'), 'dark'); window.addEventListener('resize', () => mainChart.resize()); }
+
+  const dates = rawCandles.map(c => c.timestamp.slice(0, 16));
+  const ohlc = rawCandles.map(c => [c.open, c.close, c.low, c.high]);
+  const vols = rawCandles.map(c => c.volume);
+  const colors = rawCandles.map(c => c.close >= c.open ? '#22c55e' : '#ef4444');
+
+  // 只取图表范围内的指标数据
+  const indLen = indicatorData ? (indicatorData.sma_20 || []).length : 0;
+  const offset = rawCandles.length - indLen;
+
+  function alignInd(arr) {
+    if (!arr) return [];
+    const padded = new Array(Math.max(0, offset)).fill(null);
+    return padded.concat(arr);
+  }
+
+  const series = [
+    { name: 'K线', type: 'candlestick', data: ohlc, itemStyle: { color: '#22c55e', color0: '#ef4444', borderColor: '#22c55e', borderColor0: '#ef4444' },
+      barWidth: '60%' }
+  ];
+
+  if (showMA && indicatorData) {
+    series.push({ name: 'SMA20', type: 'line', data: alignInd(indicatorData.sma_20), smooth: true, lineStyle: { width: 1 }, symbol: 'none', itemStyle: { color: '#f59e0b' } });
+    series.push({ name: 'SMA50', type: 'line', data: alignInd(indicatorData.sma_50), smooth: true, lineStyle: { width: 1 }, symbol: 'none', itemStyle: { color: '#8b5cf6' } });
+  }
+  if (showBB && indicatorData) {
+    series.push({ name: '布林上轨', type: 'line', data: alignInd(indicatorData.bb_upper), smooth: true, lineStyle: { width: 1, type: 'dashed' }, symbol: 'none', itemStyle: { color: '#64748b' } });
+    series.push({ name: '布林下轨', type: 'line', data: alignInd(indicatorData.bb_lower), smooth: true, lineStyle: { width: 1, type: 'dashed' }, symbol: 'none', itemStyle: { color: '#64748b' } });
+  }
+
+  const grids = [{ left: 60, right: 20, top: 20, bottom: showVol ? '28%' : 30 }];
+  const xAxes = [{ type: 'category', data: dates, axisLine: { lineStyle: { color: '#374151' } }, axisLabel: { color: '#6b7280', fontSize: 10 }, gridIndex: 0 }];
+  const yAxes = [{ scale: true, splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#6b7280', fontSize: 10 }, gridIndex: 0 }];
+
+  if (showVol) {
+    grids.push({ left: 60, right: 20, top: '78%', bottom: 30 });
+    xAxes.push({ type: 'category', data: dates, gridIndex: 1, show: false });
+    yAxes.push({ scale: true, gridIndex: 1, splitLine: { show: false }, axisLabel: { show: false } });
+    series.push({ name: '成交量', type: 'bar', data: vols.map((v, i) => ({ value: v, itemStyle: { color: colors[i] + '80' } })), xAxisIndex: 1, yAxisIndex: 1, barWidth: '60%' });
+  }
+
+  mainChart.setOption({
+    backgroundColor: 'transparent',
+    animation: false,
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: '#1e293b', borderColor: '#374151', textStyle: { color: '#e2e8f0', fontSize: 12 } },
+    grid: grids, xAxis: xAxes, yAxis: yAxes,
+    dataZoom: [{ type: 'inside', xAxisIndex: showVol ? [0, 1] : [0], start: 70, end: 100 }, { type: 'slider', xAxisIndex: showVol ? [0, 1] : [0], bottom: 5, height: 20, start: 70, end: 100, borderColor: '#374151', fillerColor: '#3b82f620', textStyle: { color: '#6b7280' } }],
+    series: series
+  }, true);
+}
+
+function toggleIndicator(type) {
+  if (type === 'ma') showMA = !showMA;
+  if (type === 'bb') showBB = !showBB;
+  if (type === 'vol') showVol = !showVol;
+  renderChart();
+}
+
+// ============================================================
+// 指标面板
+// ============================================================
+function renderIndicatorPanel(res) {
+  const ind = res.indicators;
+  const p = res.current_price;
+  const rows = [
+    ['当前价格', fmt(p, 4), ''],
+    ['SMA(20)', fmt(last(ind.sma_20), 4), p > last(ind.sma_20) ? 'signal-bull' : 'signal-bear'],
+    ['SMA(50)', fmt(last(ind.sma_50), 4), p > last(ind.sma_50) ? 'signal-bull' : 'signal-bear'],
+    ['EMA(12)', fmt(last(ind.ema_12), 4), ''],
+    ['EMA(26)', fmt(last(ind.ema_26), 4), ''],
+    ['RSI(14)', fmt(last(ind.rsi_14), 1), last(ind.rsi_14) > 70 ? 'signal-bear' : last(ind.rsi_14) < 30 ? 'signal-bull' : ''],
+    ['MACD', fmt(last(ind.macd_line), 4), last(ind.macd_line) > last(ind.macd_signal) ? 'signal-bull' : 'signal-bear'],
+    ['ATR(14)', fmt(last(ind.atr_14), 4), ''],
+    ['%K', fmt(last(ind.stoch_k), 1), ''],
+    ['%D', fmt(last(ind.stoch_d), 1), ''],
+  ];
+  let html = '';
+  rows.forEach(([label, val, cls]) => {
+    html += `<div class="indicator-row"><span class="text-gray-500">${label}</span><span class="${cls}">${val}</span></div>`;
+  });
+  const sr = ind.support_resistance || {};
+  if (sr.support && sr.support.length) html += `<div class="indicator-row"><span class="text-gray-500">支撑位</span><span class="signal-bull">${sr.support.map(v => fmt(v,4)).join(', ')}</span></div>`;
+  if (sr.resistance && sr.resistance.length) html += `<div class="indicator-row"><span class="text-gray-500">阻力位</span><span class="signal-bear">${sr.resistance.map(v => fmt(v,4)).join(', ')}</span></div>`;
+  $('indicatorPanel').innerHTML = html;
+}
+
+// ============================================================
+// 信号面板
+// ============================================================
+async function loadSignals() {
+  $('signalBtn').innerHTML = '<span class="loading"></span>';
+  try {
+    const res = await api('/api/signal', { candles: rawCandles, symbol: 'SAMPLE' });
+    let html = '';
+    // 综合评分
+    const scoreColor = res.score > 0 ? '#22c55e' : res.score < 0 ? '#ef4444' : '#eab308';
+    const scorePct = Math.abs(res.score);
+    html += `<div class="mb-3"><div class="flex justify-between mb-1"><span class="font-bold ${res.score > 0 ? 'signal-bull' : res.score < 0 ? 'signal-bear' : 'signal-neutral'}">${res.overall_signal}</span><span style="color:${scoreColor}">${res.score > 0 ? '+' : ''}${res.score}</span></div>`;
+    html += `<div class="score-bar"><div class="score-fill" style="width:${scorePct}%;background:${scoreColor};margin-left:${res.score < 0 ? (100-scorePct)+'%' : '50%'}"></div></div></div>`;
+    // 各信号
+    const signals = res.signals || {};
+    Object.keys(signals).forEach(key => {
+      const s = signals[key];
+      const borderColor = s.signal.includes('多') ? 'var(--green)' : s.signal.includes('空') ? 'var(--red)' : 'var(--yellow)';
+      html += `<div class="alert-item fade-in" style="border-color:${borderColor}"><span class="font-bold">${key}</span>: <span style="color:${borderColor}">${s.signal}</span><br><span class="text-gray-500">${s.detail}</span></div>`;
+    });
+    $('signalPanel').innerHTML = html;
+  } catch(e) { $('signalPanel').textContent = '获取信号失败: ' + e.message; }
+  $('signalBtn').textContent = '刷新';
+}
+
+// ============================================================
+// AI分析
+// ============================================================
+async function runAnalysis() {
+  if (!rawCandles.length) { alert('请先加载数据'); return; }
+  $('analyzeBtn').innerHTML = '<span class="loading"></span>';
+  $('aiPanel').innerHTML = '<span class="text-gray-500">AI正在分析中，请稍候...</span>';
+  try {
+    const res = await api('/api/analyze', { symbol: 'SAMPLE', timeframe: '1h', candles: rawCandles });
+    let html = '';
+    if (res.rule_signals) {
+      html += `<div class="mb-2 p-2 rounded" style="background:#1e293b"><strong>规则信号:</strong> <span class="${res.rule_signals.score > 0 ? 'signal-bull' : 'signal-bear'}">${res.rule_signals.overall_signal} (${res.rule_signals.score})</span></div>`;
+    }
+    html += `<div class="mt-2">${simpleMarkdown(res.ai_analysis || '无AI响应')}</div>`;
+    $('aiPanel').innerHTML = html;
+  } catch(e) { $('aiPanel').textContent = '分析失败: ' + e.message; }
+  $('analyzeBtn').textContent = '分析';
+}
+
+async function runReport() {
+  if (!rawCandles.length) { alert('请先加载数据'); return; }
+  $('reportBtn').innerHTML = '<span class="loading"></span>';
+  $('aiPanel').innerHTML = '<span class="text-gray-500">正在生成综合报告...</span>';
+  try {
+    const res = await api('/api/report', { symbol: 'SAMPLE', candles: rawCandles, timeframe: '1h' });
+    $('aiPanel').innerHTML = `<div>${simpleMarkdown(res.report || '无报告内容')}</div>`;
+  } catch(e) { $('aiPanel').textContent = '报告生成失败: ' + e.message; }
+  $('reportBtn').textContent = '报告';
+}
+
+// ============================================================
+// 回测
+// ============================================================
+async function runBacktest() {
+  if (!rawCandles.length) { alert('请先加载数据'); return; }
+  $('backtestBtn').innerHTML = '<span class="loading"></span>';
+  const entryRsi = parseInt($('entryRsi').value) || 30;
+  const exitRsi = parseInt($('exitRsi').value) || 70;
+  const sl = parseFloat($('stopLoss').value) / 100 || null;
+  const tp = parseFloat($('takeProfit').value) / 100 || null;
+
+  try {
+    const res = await api('/api/strategy/backtest', {
+      candles: rawCandles,
+      entry_conditions: [{ left: 'rsi_14', op: '<', right: entryRsi }],
+      exit_conditions: [{ left: 'rsi_14', op: '>', right: exitRsi }],
+      initial_capital: 100000,
+      position_pct: 0.95,
+      stop_loss_pct: sl,
+      take_profit_pct: tp,
+      commission_pct: 0.001
+    });
+    const m = res.metrics;
+    const retColor = m.total_return_pct >= 0 ? 'signal-bull' : 'signal-bear';
+    let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">总收益</div><div class="text-lg font-bold ${retColor}">${m.total_return_pct >= 0 ? '+' : ''}${fmt(m.total_return_pct)}%</div></div>
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">最大回撤</div><div class="text-lg font-bold signal-bear">-${fmt(m.max_drawdown_pct)}%</div></div>
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">胜率</div><div class="text-lg font-bold">${fmt(m.win_rate_pct)}%</div></div>
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">夏普比率</div><div class="text-lg font-bold">${fmt(m.sharpe_ratio)}</div></div>
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">交易次数</div><div class="font-bold">${m.num_trades}</div></div>
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">利润因子</div><div class="font-bold">${m.profit_factor}</div></div>
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">平均盈利</div><div class="font-bold signal-bull">${fmt(m.avg_win_pct)}%</div></div>
+      <div class="p-2 rounded bg-gray-800"><div class="text-gray-500">平均亏损</div><div class="font-bold signal-bear">${fmt(m.avg_loss_pct)}%</div></div>
+    </div>`;
+    $('backtestResult').innerHTML = html;
+  } catch(e) { $('backtestResult').textContent = '回测失败: ' + e.message; }
+  $('backtestBtn').textContent = '运行回测';
+}
+
+// ============================================================
+// 健康检查
+// ============================================================
+async function checkHealth() {
+  try {
+    await api('/api/health');
+    $('statusDot').className = 'w-2 h-2 rounded-full bg-green-500 inline-block';
+  } catch {
+    $('statusDot').className = 'w-2 h-2 rounded-full bg-red-500 inline-block';
+  }
+}
+
+// ============================================================
+// 事件绑定与初始化
+// ============================================================
+$('loadBtn').addEventListener('click', loadData);
+$('signalBtn').addEventListener('click', loadSignals);
+$('analyzeBtn').addEventListener('click', runAnalysis);
+$('reportBtn').addEventListener('click', runReport);
+$('backtestBtn').addEventListener('click', runBacktest);
+
+// 启动
+checkHealth();
+loadData();
+setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>

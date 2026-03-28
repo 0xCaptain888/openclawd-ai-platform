@@ -1,0 +1,10 @@
+This is a sample knowledge base document.
+Place your .txt or .md files in this directory.
+The AI chatbot will use these documents to answer questions (RAG).
+
+Example topics to include:
+- Company information and policies
+- Product details and specifications
+- Frequently asked questions
+- Shipping and return policies
+- Service level agreements
